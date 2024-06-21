@@ -20,7 +20,7 @@ os.environ["HF_HOME"]='.cache'
 MODEL_NAME = "BAAI/bge-m3"  # Supports 100 languages, up to 8192 tokens
 
 # Path to the JSON data file
-JSON_DATA = "EADOP_5.json"
+JSON_DATA = "EADOP.json"
 """
 A JSON file (json_data_path) is required in the following format:
 
@@ -171,7 +171,7 @@ def load_txt_data(path:str) -> List[Document]:
     return docs
     
 
-def create_index(data, model_name, chunk_size, chunk_overlap, suffix="", dist="vs"):
+def create_index(documents, model_name, chunk_size, chunk_overlap, suffix="", dist="vs"):
     """
     Generate an index from a list of text data 
     and save it to a specified location (dist) using the provided parameters and model.
@@ -192,31 +192,33 @@ def create_index(data, model_name, chunk_size, chunk_overlap, suffix="", dist="v
     model = model_name.replace('/','_')
     persist_dir=f"{dist}/index-{model}-{chunk_size}-{chunk_overlap}-recursive_splitter-{suffix}"
 
-    text_splitter = RecursiveCharacterTextSplitter(separators=["\nARTICLE", "\nArticle", "\nARTÍCULO", "\nArtículo", "\n\n", "\n"], 
-                                                   chunk_size=chunk_size,
-                                                   chunk_overlap=chunk_overlap,
-                                                   keep_separator=True,
-                                                   strip_whitespace=True)
+    text_splitter = RecursiveCharacterTextSplitter(
+        separators=["\nARTICLE", "\nArticle", "\nARTÍCULO", "\nArtículo", "\n\n", "\n"], 
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        keep_separator=True,
+        strip_whitespace=True)
 
 
     logging.info("Chunking")
-    documents = text_splitter.split_documents(data)
+    chunks = text_splitter.split_documents(documents)
     # Adding document title to each chunks.
-    for doc in documents:
+    for doc in chunks:
         if (len(doc.metadata["Títol de la norma"])) > 0:
             doc.page_content = f'{doc.metadata["Títol de la norma"]}\n\n{doc.page_content}'
   
     
     start = time.time()
     logging.info("start indexing")
-    vectorstore = FAISS.from_documents(documents=documents, embedding=embeddings)
+    vectorstore = FAISS.from_documents(documents=chunks,
+                                       embedding=embeddings)
     logging.info(f"indexing done in {time.time() - start} seconds")
 
     start = time.time()
     logging.info("start saving")
     vectorstore.save_local(persist_dir)
     logging.info(f"index persisted in {persist_dir} in {time.time() - start} seconds")
-
+    return vectorstore
 
 if __name__ == "__main__":
     # Load data from JSON loaders and text files
@@ -228,4 +230,7 @@ if __name__ == "__main__":
     data = data_es + data_ca + texts
     
     # Create and save index using specified parameters and model
-    vs = create_index(data, MODEL_NAME, CHUNK_SIZE, CHUNK_OVERLAP, suffix="CA_ES_UE", dist=DIST)
+    vectorstore = create_index(data, MODEL_NAME, CHUNK_SIZE, CHUNK_OVERLAP, suffix="CA_ES_UE", dist=DIST)
+
+    prompt = "Què és l'EADOP (Entitat Autònoma del Diari Oficial i de Publicacions)?"
+    documents = vectorstore.similarity_search_with_score(prompt, k=4)
