@@ -4,13 +4,12 @@ from rag import RAG
 def initialize_rag():
     """Initialize the RAG model with parameters and vector store."""
     rag = RAG()
-    rag.load_parameters()
-    rag.db = rag.load_vectorestore(rag.parameters["EMBEDDINGS"], rag.parameters["VECTORESTORE_DIRECTORY"])
+    rag.initialize_model()
     return rag
 
 def process_query(rag, query):
     """Process the user query and return the context and answer."""
-    context = rag.get_contexts(rag.parameters["RERANK"], query, rag.parameters["NUMBER_OF_CONTEXTS"])
+    context = rag.get_contexts(query)
     answer = rag.predict(query, context)
     return context, answer
 

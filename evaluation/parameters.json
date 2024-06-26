@@ -9,6 +9,7 @@
     "NUMBER_OF_CONTEXTS" : 1,
     "RERANK" : true,
     "RERANK_MODEL" : "ibm/re2g-reranker-trex", 
+    "RERANK_NUMBER_OF_CONTEXTS" : 2,
 
     "ENDPOINT_LLM" : "https://mft4yywyn57e00qe.eu-west-1.aws.endpoints.huggingface.cloud",
     "LLM" : "crodri/RAGGFlor6.3",
