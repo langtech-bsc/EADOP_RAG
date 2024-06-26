@@ -1,0 +1,24 @@
+{
+    "TESTSET_DIRECTORY" : "synthetic_test_set_100.jsonl",
+
+    "EMBEDDINGS" : "BAAI/bge-m3",
+    "CHUNK_SIZE": 1500,
+    "CHUNK_OVERLAP" : 200,
+    "VECTORESTORE_DIRECTORY" : "vectorstores/index-BAAI_bge-m3-1500-200-recursive_splitter-CA_ES",
+
+    "NUMBER_OF_CONTEXTS" : 1,
+    "RERANK" : true,
+    "RERANK_MODEL" : "ibm/re2g-reranker-trex", 
+
+    "ENDPOINT_LLM" : "https://mft4yywyn57e00qe.eu-west-1.aws.endpoints.huggingface.cloud",
+    "LLM" : "crodri/RAGGFlor6.3",
+
+    "MAX_NEW_TOKEN" : 700,
+    "TOP_K" : 50,
+    "TOP_P" : 0.99,
+    "TEMPERATURE" : 0.35,
+    "REPETITION_PENALTY" : 1,
+
+    "EVALUATION_LLM_ENDPOINT" : "https://stgbp9lzwbhdmvgb.us-east-1.aws.endpoints.huggingface.cloud",
+    "EVALUATION_LLM" : "mistralai/Mixtral-8x7B-Instruct-v0.1"
+}
