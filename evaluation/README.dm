@@ -17,3 +17,18 @@ EVALUATION_LLM_ENDPOINT - a HuggingFace or other endpoint.
 LLM - name of the model-evaluator.
 
 4. Create .env file as a template use .env.example.
+
+5. To test the model manually:
+´´´
+python interactive.py
+´´´
+Tp evaluate the model with a test set:
+´´´
+python test_rag.py
+´´´
+To evaluate the model without retrieval component:
+´´´
+python test_rag.py  -retrieval="skip"
+´´´
+
+The results of the evaluation are stored as a json file in test_results and also added to mongoDB.
