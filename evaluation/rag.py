@@ -81,7 +81,7 @@ class RAG():
             logits = outputs.logits
             
             # Extract the score (assuming binary classification, take the second logit)
-            score = logits[0][1].item()  # Typically, the second logit represents the positive class
+            score = logits.view(-1, ).float()  # Typically, the second logit represents the positive class
             
             #print(f"Relevance score for the passage: {score}")
             return score
