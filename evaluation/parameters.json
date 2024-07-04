@@ -9,10 +9,10 @@
     "NUMBER_OF_CONTEXTS" : 1,
     "RERANK" : true,
     "RERANK_MODEL" : "ibm/re2g-reranker-trex", 
-    "RERANK_NUMBER_OF_CONTEXTS" : 2,
+    "RERANK_NUMBER_OF_CONTEXTS" : 10,
 
-    "ENDPOINT_LLM" : "https://mft4yywyn57e00qe.eu-west-1.aws.endpoints.huggingface.cloud",
-    "LLM" : "crodri/RAGGFlor6.3",
+    "ENDPOINT_LLM" : "",
+    "LLM" : "",
 
     "MAX_NEW_TOKEN" : 700,
     "TOP_K" : 50,
@@ -20,6 +20,6 @@
     "TEMPERATURE" : 0.35,
     "REPETITION_PENALTY" : 1,
 
-    "EVALUATION_LLM_ENDPOINT" : "https://stgbp9lzwbhdmvgb.us-east-1.aws.endpoints.huggingface.cloud",
+    "EVALUATION_LLM_ENDPOINT" : "",
     "EVALUATION_LLM" : "mistralai/Mixtral-8x7B-Instruct-v0.1"
 }

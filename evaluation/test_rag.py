@@ -16,8 +16,7 @@ from criterias import conciseness_criteria, relevance_criteria, correctness_crit
 
 load_dotenv()
 
-criterias = [correctness_criteria, groundedness_criteria]
-#criterias = [conciseness_criteria, relevance_criteria, correctness_criteria, understandability_criteria, groundedness_criteria, completeness_criteria, language_criteria, complete_sentence_criteria]
+criterias = [conciseness_criteria, relevance_criteria, correctness_criteria, understandability_criteria, groundedness_criteria, completeness_criteria, language_criteria, complete_sentence_criteria]
 
 print(f"Evaluating with {len(criterias)} criterias:")
 print([list(c.keys())[0] for c in criterias ])
