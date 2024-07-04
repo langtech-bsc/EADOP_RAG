@@ -10,7 +10,11 @@ def initialize_rag():
 def process_query(rag, query):
     """Process the user query and return the context and answer."""
     context = rag.get_contexts(query)
-    answer = rag.predict(query, context)
+    try:
+        answer = rag.predict(query, context)
+    except KeyError:
+        print("The endpoint is not connected!")
+        answer = "NO ANSWER"
     return context, answer
 
 def main():

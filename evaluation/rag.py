@@ -83,7 +83,7 @@ class RAG():
             # Extract the score (assuming binary classification, take the second logit)
             score = logits[0][1].item()  # Typically, the second logit represents the positive class
             
-            print(f"Relevance score for the passage: {score}")
+            #print(f"Relevance score for the passage: {score}")
             return score
 
         scores = [get_score(instruction, c[0].page_content) for c in contexts]
