@@ -4,7 +4,7 @@ from custom_llm import MN5_ENDPOINT
 import re
 
 from evaluation_prompt import SCORING_TEMPLATE_WITH_REFERENCE_1_TO_5, SCORING_TEMPLATE_1_TO_5, SCORING_TEMPLATE_WITH_QUERY_1_TO_5, SCORING_TEMPLATE_WITH_CONTEXT_0_OR_1, SCORING_TEMPLATE_WITH_CONTEXT_1_TO_5, SCORING_TEMPLATE_0_OR_1
-from criterias import conciseness_criteria, relevance_criteria, correctness_criteria, understandability_criteria, groundedness_criteria, completeness_criteria, reliability_criteria, language_criteria, complete_sentence_criteria
+from criterias import conciseness_criteria, relevance_criteria, correctness_criteria, understandability_criteria, groundedness_criteria, completeness_criteria, language_criteria, complete_sentence_criteria
 
 prompt_templates = {
     "conciseness" : SCORING_TEMPLATE_1_TO_5,
@@ -13,7 +13,6 @@ prompt_templates = {
     "understandability" : SCORING_TEMPLATE_1_TO_5,
     "groundedness" : SCORING_TEMPLATE_WITH_CONTEXT_1_TO_5,
     "completeness" : SCORING_TEMPLATE_WITH_REFERENCE_1_TO_5,
-    "reliability" : SCORING_TEMPLATE_WITH_CONTEXT_0_OR_1,
     "language" : SCORING_TEMPLATE_WITH_CONTEXT_0_OR_1,
     "complete_sentence" : SCORING_TEMPLATE_0_OR_1
 }       
@@ -67,7 +66,7 @@ class Evaluator():
         elif criteria == language_criteria:
             return prompt_template.format(criteria=criteria, context=query, prediction=actual_answer)
         
-        elif criteria in [reliability_criteria , groundedness_criteria]:
+        elif criteria in [groundedness_criteria]:
             return prompt_template.format(criteria=criteria, prediction=actual_answer, context=context)
 
         

@@ -49,15 +49,6 @@ Score 4: The answer is mostly complete, with only minor details or explanations 
 Score 5: The answer is entirely complete, thoroughly addressing all aspects of the question and providing comprehensive information."""
 }
 
-reliability_criteria = {
-    "reliability": """
-Your task is to check if text2 contains all the facts  excplicitly mentioned in text1. If all the facts from text1 are present in text2 you should answer '1'. \
-    Otherwise score '0'.\
-    After providing your explanation, you must rate the response either 0 or 1 \
-by strictly following this format: '[[rating]]', for example: 'Rating: [[0]]
-"""
-}
-
 language_criteria = {
     "language": """
 Your task is to check if text1 and text2 are in the same language. If they are in the same language you should answer '1'. \
