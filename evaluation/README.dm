@@ -1,10 +1,10 @@
 EVALUATION
 
 1. Create new enviroment and install requirements.txt.
-´´´
+```
 python -m venv myenv
 pip install -r requirements.txt
-´´´
+```
 
 2. Create a new directory vectorstores and copy your vector store there \n
 or change the path in parameters.json to another vector store.
