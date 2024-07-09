@@ -58,9 +58,9 @@ def save_to_db(params, stats, answers):
     """
     save results in json format in mongoDB
     """
-    db_user = os.getenv("MONGODB_USER")
-    db_password = os.getenv("MONGODB_TOKEN")
-    connection_string = f"mongodb+srv://{db_user}:{db_password}@cluster0.wrilfi4.mongodb.net/tests?retryWrites=true&w=majority"
+    connection_string = os.getenv("MONGODB_CONNECTION_STRING")
+    if not connection_string:
+        raise ValueError("MongoDB connection string is not set in the environment variables.")
 
     client = pymongo.MongoClient(connection_string)
     db = client["tests"] 
@@ -70,7 +70,7 @@ def save_to_db(params, stats, answers):
     result = collection.insert_one(document)
     print("Inserted document ID:", result.inserted_id)
 
-def process(retrieval, mn5):
+def process(retrieval, mn5, mongodb):
 
     # initiate model
     rag = RAG()
@@ -180,23 +180,29 @@ def process(retrieval, mn5):
     params = rag.parameters
 
     write_json(params, stats, results)
-    save_to_db(params, stats, results)
+    if mongodb:
+        save_to_db(params, stats, results)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--retrieval", type=str, default="default_retrieval", help="Specifies the retrieval method to use. Default is 'default_retrieval'.")
-    parser.add_argument("--mn5", type=bool, default=False, help="Specifies whether to use the MN5 endpoint through the localhost. Default is False.")
+    parser.add_argument("--retrieval", type=bool, default=True, help="Specifies whether to use retrieval component.")
+    parser.add_argument("--mn5", type=bool, default=False, help="Specifies whether to use the MN5 endpoint through the localhost.")
+    parser.add_argument("--mongodb", type=bool, default=True, help="Specifies whether to save evaluation results to mongodb.")
+
     args = parser.parse_args()
 
     retrieval = args.retrieval
     mn5 = args.mn5
+    mongodb = args.mongodb
 
     if retrieval is None:
         retrieval = True
     if mn5 is None:
         mn5 = False
+    if retrieval is None:
+        mongodb = True
 
-    process(retrieval, mn5)
+    process(retrieval, mn5, mongodb)
 
 if __name__ == "__main__":
     main()
