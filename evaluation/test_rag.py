@@ -70,7 +70,7 @@ def save_to_db(params, stats, answers):
     result = collection.insert_one(document)
     print("Inserted document ID:", result.inserted_id)
 
-def process(retrieval):
+def process(retrieval, mn5):
 
     # initiate model
     rag = RAG()
@@ -89,8 +89,8 @@ def process(retrieval):
     totals["correct_retrieval"] = total
     scores["correct_retrieval"] = 0
 
-    # create evaluator using mn5
-    evaluator = Evaluator(mn5=True)
+    # create evaluator
+    evaluator = Evaluator(mn5=mn5)
     results = []
 
     # evaluation
@@ -106,7 +106,7 @@ def process(retrieval):
         result["query"] = test_query
 
         # context
-        if retrieval == "skip":
+        if not retrieval:
             context = test_df["quote"][i]
             result["context"] = context
         else:
@@ -184,11 +184,19 @@ def process(retrieval):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--retrieval", type=str)
+    parser.add_argument("--retrieval", type=str, default="default_retrieval", help="Specifies the retrieval method to use. Default is 'default_retrieval'.")
+    parser.add_argument("--mn5", type=bool, default=False, help="Specifies whether to use the MN5 endpoint through the localhost. Default is False.")
     args = parser.parse_args()
-    retrieval = args.retrieval
 
-    process(retrieval)
+    retrieval = args.retrieval
+    mn5 = args.mn5
+
+    if retrieval is None:
+        retrieval = True
+    if mn5 is None:
+        mn5 = False
+
+    process(retrieval, mn5)
 
 if __name__ == "__main__":
     main()

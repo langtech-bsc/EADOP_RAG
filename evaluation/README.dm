@@ -28,10 +28,23 @@ python interactive.py
 ´´´
 python test_rag.py
 ´´´
-To evaluate the model without retrieval component:
-´´´
-python test_rag.py  --retrieval="skip"
-´´´
-Choose criterias by which you want to evaluate a model in criteria_config in "test_rag.py".
+
+Arguments:
+
+`--retrieval`
+ - type: 'bool'
+ - description: Specifies if to skip retrieval component. Default value is True.
+ - example:
+ `python test_rag.py --retrieval False`
+
+ `--mn5`
+ - type: 'bool'
+ - description: Indicates whether to use the MN5 endpoint through the localhost. 
+   When set to True, the script will connect to the MN5 endpoint running on the local machine.
+   Default value is False.
+ - example:
+ `python test_rag.py --mn5 True`
+
+7. Choose criterias by which you want to evaluate a model in criteria_config in "test_rag.py".
 
 The results of the evaluation are stored as a json file in test_results and also added to mongoDB.

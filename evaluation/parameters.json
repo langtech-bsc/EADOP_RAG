@@ -21,5 +21,7 @@
     "REPETITION_PENALTY" : 1,
 
     "EVALUATION_LLM_ENDPOINT" : "",
-    "EVALUATION_LLM" : "mistralai/Mixtral-8x7B-Instruct-v0.1"
+    "EVALUATION_LLM" : "mistralai/Mixtral-8x7B-Instruct-v0.1",
+
+    "MONGODB_URI" : ""
 }
