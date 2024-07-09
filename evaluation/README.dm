@@ -3,6 +3,7 @@ EVALUATION
 1. Create new enviroment and install requirements.txt.
 ```
 python -m venv myenv
+source myenv/bin/activate
 pip install -r requirements.txt
 ```
 
