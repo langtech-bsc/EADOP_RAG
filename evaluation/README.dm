@@ -29,7 +29,7 @@ python test_rag.py
 ´´´
 To evaluate the model without retrieval component:
 ´´´
-python test_rag.py  -retrieval="skip"
+python test_rag.py  --retrieval="skip"
 ´´´
 
 The results of the evaluation are stored as a json file in test_results and also added to mongoDB.

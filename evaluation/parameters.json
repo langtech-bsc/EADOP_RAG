@@ -8,7 +8,7 @@
 
     "NUMBER_OF_CONTEXTS" : 1,
     "RERANK" : true,
-    "RERANK_MODEL" : "ibm/re2g-reranker-trex", 
+    "RERANK_MODEL" : "BAAI/bge-reranker-v2-m3", 
     "RERANK_NUMBER_OF_CONTEXTS" : 10,
 
     "ENDPOINT_LLM" : "",
