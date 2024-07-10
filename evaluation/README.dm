@@ -23,13 +23,30 @@ LLM - name of the model-evaluator.
 ´´´
 python interactive.py
 ´´´
-Tp evaluate the model with a test set:
+
+6. To evaluate the model with a test set:
 ´´´
 python test_rag.py
 ´´´
-To evaluate the model without retrieval component:
-´´´
-python test_rag.py  --retrieval="skip"
-´´´
+
+Arguments:
+
+`--no_retrieval`
+ - description: If adding this argument, the retrieval component will be skipped.
+ - example:
+ `python test_rag.py --no_retrieval`
+
+ `--mn5`
+ - description: If adding this argument, RAG will be using Mare Nostrum 5 endpoint through the localhost. 
+   Otherwise HuggingFace endpoint is used.
+ - example:
+ `python test_rag.py --mn5`
+
+`--mongodb`
+- description: If adding this argument, the evaluation results will be added to mongoDB database.
+- example:
+`python test_rag.py --mongodb`
+
+7. Choose criterias by which you want to evaluate a model in criteria_config in "test_rag.py".
 
 The results of the evaluation are stored as a json file in test_results and also added to mongoDB.

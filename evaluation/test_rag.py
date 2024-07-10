@@ -16,11 +16,24 @@ from criterias import conciseness_criteria, relevance_criteria, correctness_crit
 
 load_dotenv()
 
-criterias = [conciseness_criteria, relevance_criteria, correctness_criteria, understandability_criteria, groundedness_criteria, completeness_criteria, language_criteria, complete_sentence_criteria]
+all_criterias = [conciseness_criteria, relevance_criteria, correctness_criteria, understandability_criteria, groundedness_criteria, completeness_criteria, language_criteria, complete_sentence_criteria]
+
+criteria_config = {
+    "conciseness": False,
+    "relevance": False,
+    "correctness": True,
+    "understandability": False,
+    "groundedness": True,
+    "completeness": False,
+    "language": False, 
+    "complete_sentence": False
+}
+
+criterias = [c for c in all_criterias if criteria_config.get(list(c.keys())[0], False)]
 
 print(f"Evaluating with {len(criterias)} criterias:")
 print([list(c.keys())[0] for c in criterias ])
-print("===================================")
+print("=" * 60)
 
 def write_json(params, stats, answers):
     """
@@ -44,9 +57,9 @@ def save_to_db(params, stats, answers):
     """
     save results in json format in mongoDB
     """
-    db_user = os.getenv("MONGODB_USER")
-    db_password = os.getenv("MONGODB_TOKEN")
-    connection_string = f"mongodb+srv://{db_user}:{db_password}@cluster0.wrilfi4.mongodb.net/tests?retryWrites=true&w=majority"
+    connection_string = os.getenv("MONGODB_CONNECTION_STRING")
+    if not connection_string:
+        raise ValueError("MongoDB connection string is not set in the environment variables.")
 
     client = pymongo.MongoClient(connection_string)
     db = client["tests"] 
@@ -56,7 +69,7 @@ def save_to_db(params, stats, answers):
     result = collection.insert_one(document)
     print("Inserted document ID:", result.inserted_id)
 
-def process(retrieval):
+def process(retrieval, mn5, mongodb):
 
     # initiate model
     rag = RAG()
@@ -75,15 +88,15 @@ def process(retrieval):
     totals["correct_retrieval"] = total
     scores["correct_retrieval"] = 0
 
-    # create evaluator using mn5
-    evaluator = Evaluator(mn5=True)
+    # create evaluator
+    evaluator = Evaluator(mn5=mn5)
     results = []
 
     # evaluation
     for i in range(total):
 
         result = {}
-        print("=======================================")
+        print("=" * 60)
 
         # query
         test_query = test_df["question"][i]
@@ -92,7 +105,7 @@ def process(retrieval):
         result["query"] = test_query
 
         # context
-        if retrieval == "skip":
+        if not retrieval:
             context = test_df["quote"][i]
             result["context"] = context
         else:
@@ -129,7 +142,7 @@ def process(retrieval):
             criteria_name = list(criteria.keys())[0]
             try:
                 eval_results = evaluator.evaluate(
-                    rag.parameters["EVALUATION_LLM"],
+                    rag.parameters["EVALUATION_LLM_ENDPOINT"],
                     criteria,
                     test_query,
                     test_df["answer"][i],
@@ -166,15 +179,27 @@ def process(retrieval):
     params = rag.parameters
 
     write_json(params, stats, results)
-    save_to_db(params, stats, results)
+    if mongodb:
+        save_to_db(params, stats, results)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--retrieval", type=str)
-    args = parser.parse_args()
-    retrieval = args.retrieval
+    parser.add_argument("--no_retrieval", action="store_true", help="Specifies whether to use retrieval component.")
+    parser.add_argument("--mn5", action="store_true", help="Specifies whether to use the MN5 endpoint through the localhost.")
+    parser.add_argument("--mongodb", action="store_true", help="Specifies whether to save evaluation results to mongodb.")
 
-    process(retrieval)
+    args = parser.parse_args()
+
+    retrieval = not args.no_retrieval
+    mn5 = args.mn5
+    mongodb = args.mongodb
+
+    print(f"Retrieval: {retrieval}")
+    print(f"Using Mare Nostrum 5: {mn5}")
+    print(f"Saving results in mongoDB: {mongodb}")
+    print("=" * 60)
+
+    process(retrieval, mn5, mongodb)
 
 if __name__ == "__main__":
     main()
