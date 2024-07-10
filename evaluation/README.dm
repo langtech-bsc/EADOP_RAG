@@ -31,19 +31,21 @@ python test_rag.py
 
 Arguments:
 
-`--retrieval`
- - type: 'bool'
- - description: Specifies if to skip retrieval component. Default value is True.
+`--no_retrieval`
+ - description: If adding this argument, the retrieval component will be skipped.
  - example:
- `python test_rag.py --retrieval False`
+ `python test_rag.py --no_retrieval`
 
  `--mn5`
- - type: 'bool'
- - description: Indicates whether to use the MN5 endpoint through the localhost. 
-   When set to True, the script will connect to the MN5 endpoint running on the local machine.
-   Default value is False.
+ - description: If adding this argument, RAG will be using Mare Nostrum 5 endpoint through the localhost. 
+   Otherwise HuggingFace endpoint is used.
  - example:
- `python test_rag.py --mn5 True`
+ `python test_rag.py --mn5`
+
+`--mongodb`
+- description: If adding this argument, the evaluation results will be added to mongoDB database.
+- example:
+`python test_rag.py --mongodb`
 
 7. Choose criterias by which you want to evaluate a model in criteria_config in "test_rag.py".
 

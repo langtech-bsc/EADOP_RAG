@@ -19,22 +19,21 @@ load_dotenv()
 all_criterias = [conciseness_criteria, relevance_criteria, correctness_criteria, understandability_criteria, groundedness_criteria, completeness_criteria, language_criteria, complete_sentence_criteria]
 
 criteria_config = {
-    "conciseness": True,
-    "relevance": True,
+    "conciseness": False,
+    "relevance": False,
     "correctness": True,
-    "understandability": True,
+    "understandability": False,
     "groundedness": True,
-    "completeness": True,
+    "completeness": False,
     "language": False, 
     "complete_sentence": False
 }
 
 criterias = [c for c in all_criterias if criteria_config.get(list(c.keys())[0], False)]
-print(criterias)
 
 print(f"Evaluating with {len(criterias)} criterias:")
 print([list(c.keys())[0] for c in criterias ])
-print("===================================")
+print("=" * 60)
 
 def write_json(params, stats, answers):
     """
@@ -97,7 +96,7 @@ def process(retrieval, mn5, mongodb):
     for i in range(total):
 
         result = {}
-        print("=======================================")
+        print("=" * 60)
 
         # query
         test_query = test_df["question"][i]
@@ -143,7 +142,7 @@ def process(retrieval, mn5, mongodb):
             criteria_name = list(criteria.keys())[0]
             try:
                 eval_results = evaluator.evaluate(
-                    rag.parameters["EVALUATION_LLM"],
+                    rag.parameters["EVALUATION_LLM_ENDPOINT"],
                     criteria,
                     test_query,
                     test_df["answer"][i],
@@ -185,22 +184,20 @@ def process(retrieval, mn5, mongodb):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--retrieval", type=bool, default=True, help="Specifies whether to use retrieval component.")
-    parser.add_argument("--mn5", type=bool, default=False, help="Specifies whether to use the MN5 endpoint through the localhost.")
-    parser.add_argument("--mongodb", type=bool, default=True, help="Specifies whether to save evaluation results to mongodb.")
+    parser.add_argument("--no_retrieval", action="store_true", help="Specifies whether to use retrieval component.")
+    parser.add_argument("--mn5", action="store_true", help="Specifies whether to use the MN5 endpoint through the localhost.")
+    parser.add_argument("--mongodb", action="store_true", help="Specifies whether to save evaluation results to mongodb.")
 
     args = parser.parse_args()
 
-    retrieval = args.retrieval
+    retrieval = not args.no_retrieval
     mn5 = args.mn5
     mongodb = args.mongodb
 
-    if retrieval is None:
-        retrieval = True
-    if mn5 is None:
-        mn5 = False
-    if retrieval is None:
-        mongodb = True
+    print(f"Retrieval: {retrieval}")
+    print(f"Using Mare Nostrum 5: {mn5}")
+    print(f"Saving results in mongoDB: {mongodb}")
+    print("=" * 60)
 
     process(retrieval, mn5, mongodb)
 

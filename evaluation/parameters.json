@@ -12,7 +12,7 @@
     "RERANK_NUMBER_OF_CONTEXTS" : 10,
 
     "ENDPOINT_LLM" : "",
-    "LLM" : "",
+    "LLM" : "crodri/RAGGFlor6.3",
 
     "MAX_NEW_TOKEN" : 700,
     "TOP_K" : 50,
@@ -21,7 +21,5 @@
     "REPETITION_PENALTY" : 1,
 
     "EVALUATION_LLM_ENDPOINT" : "",
-    "EVALUATION_LLM" : "mistralai/Mixtral-8x7B-Instruct-v0.1",
-
-    "MONGODB_URI" : ""
+    "EVALUATION_LLM" : "TheBloke/Nous-Hermes-2-Mixtral-8x7B-DPO-GPTQ"
 }
