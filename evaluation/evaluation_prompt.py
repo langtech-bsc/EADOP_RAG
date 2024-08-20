@@ -11,8 +11,8 @@ and evaluate the quality of the response provided by an AI \
 assistant to the user question displayed below. {criteria}"
             '[Ground Truth]\n{reference}\nBegin your evaluation \
 by providing a short explanation. Be as objective as possible. \
-After providing your explanation, you must rate the response either 0 or 1 \
-by strictly following this format: "[[rating]]", for example: "Rating: [[0]]".  .\n\n\
+After providing your explanation, you must rate the response on a scale from 1 to 5 \
+by strictly following this format: "[[rating]]", for example: "Rating: [[5]]".  .\n\n\
 [Question]\n{input}\n\n[The Start of Assistant\'s Answer]\n{prediction}\n\
 [The End of Assistant\'s Answer].',
         ),
@@ -29,8 +29,8 @@ and evaluate the quality of the text by the following criteria.[Criteria] {crite
             "[Text] {prediction}."
             "Begin your evaluation \
 by providing a short explanation. Be as objective as possible. \
-After providing your explanation, you must rate the response either 0 or 1 \
-by strictly following this format: '[[rating]]', for example: 'Rating: [[0]]'. "
+After providing your explanation, you must rate the response on a scale from 1 to 5 \
+by strictly following this format: '[[rating]]', for example: 'Rating: [[5]]'. "
         ),
     ]
 )
@@ -45,8 +45,8 @@ and evaluate the quality of the response provided by an AI \
 assistant to the user question displayed below. {criteria}"
             'Begin your evaluation \
 by providing a short explanation. Be as objective as possible. \
-After providing your explanation, you must rate the response either 0 or 1 \
-by strictly following this format: "[[rating]]", for example: "Rating: [[0]]". \n\n\
+After providing your explanation, you must rate the response on a scale from 1 to 5 \
+by strictly following this format: "[[rating]]", for example: "Rating: [[5]]". \n\n\
 [Question]\n{input}\n\n[The Start of Assistant\'s Answer]\n{prediction}\n\
 [The End of Assistant\'s Answer].',
         ),
@@ -63,8 +63,8 @@ and evaluate the quality of the response provided by an AI \
 assistant to the user question displayed below. {criteria}"
             '[Text]\n{context}\nBegin your evaluation \
 by providing a short explanation. Be as objective as possible. \
-After providing your explanation, you must rate the response either 0 or 1 \
-by strictly following this format: "[[rating]]", for example: "Rating: [[0]]". \
+After providing your explanation, you must rate the response either on a scale from 1 to 5 \
+by strictly following this format: "[[rating]]", for example: "Rating: [[5]]". \
     [The Start of Assistant\'s Answer]\n{prediction}\n\
 [The End of Assistant\'s Answer].',
         ),
