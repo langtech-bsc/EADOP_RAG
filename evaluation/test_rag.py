@@ -19,14 +19,14 @@ load_dotenv()
 all_criterias = [conciseness_criteria, relevance_criteria, correctness_criteria, understandability_criteria, groundedness_criteria, completeness_criteria, language_criteria, complete_sentence_criteria]
 
 criteria_config = {
-    "conciseness": False,
-    "relevance": False,
+    "conciseness": True,
+    "relevance": True,
     "correctness": True,
-    "understandability": False,
+    "understandability": True,
     "groundedness": True,
-    "completeness": False,
-    "language": False, 
-    "complete_sentence": False
+    "completeness": True,
+    "language": True, 
+    "complete_sentence": True
 }
 
 criterias = [c for c in all_criterias if criteria_config.get(list(c.keys())[0], False)]
@@ -128,7 +128,7 @@ def process(retrieval, mn5, mongodb):
         
 
         # answer
-        answer = rag.predict(test_query, context).strip()
+        answer = rag.predict_salamandra(test_query, context).strip()
         result["answer"] = answer
         print("Answer:")
         print(answer)

@@ -132,3 +132,33 @@ class RAG():
 
 
         return response.json()[0]["generated_text"].split("###")[-1][8:]
+    
+    def predict_salamandra(self, instruction, context):
+
+        from openai import OpenAI
+        
+        # init the client but point it to TGI
+        client = OpenAI(
+            base_url=self.parameters["ENDPOINT_LLM"],
+            api_key=os.getenv("HF_TOKEN")
+        )
+
+        query = f"Context:\n{context}\n\nQuestion:\n{instruction}"
+        #sys_prompt = "You are a helpful assistant. Answer the question using only the context you are provided with. If it is not possible to do it with the context, just say 'I can't answer'. <|endoftext|>"
+
+        chat_completion = client.chat.completions.create(
+            model="tgi",
+            messages=[
+                #{"role": "system", "content": sys_prompt },
+                {"role": "user", "content": query}
+            ],
+            temperature=self.parameters["TEMPERATURE"],
+            max_tokens=self.parameters["MAX_NEW_TOKEN"], 
+            stream=False,
+            stop=["<|im_end|>"],
+            extra_body = {
+                "presence_penalty": self.parameters["REPETITION_PENALTY"] - 2,
+                "do_sample": False
+            }
+        )
+        return(chat_completion.choices[0].message.content)
