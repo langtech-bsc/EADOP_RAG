@@ -58,13 +58,16 @@ def save_to_db(params, stats, answers):
     save results in json format in mongoDB
     """
     connection_string = os.getenv("MONGODB_CONNECTION_STRING")
+    db_name = os.getenv("MONGODB_DATABASE_NAME")
+    db_collection = os.getenv("MONGODB_COLLECTION_NAME")
+
     if not connection_string:
         raise ValueError("MongoDB connection string is not set in the environment variables.")
 
     client = pymongo.MongoClient(connection_string)
-    db = client["tests"] 
+    db = client[db_name] 
 
-    collection = db["test_results_100"]
+    collection = db[db_collection]
     document = {"parameters": params, "stats": stats, "answers": answers}
     result = collection.insert_one(document)
     print("Inserted document ID:", result.inserted_id)
