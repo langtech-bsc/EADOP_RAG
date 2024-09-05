@@ -8,6 +8,9 @@ from datetime import datetime
 from dotenv import load_dotenv
 import langchain
 import pymongo
+import hashlib
+
+
 langchain.debug = True
 
 from rag import RAG
@@ -15,6 +18,8 @@ from evaluator import Evaluator
 from criterias import conciseness_criteria, relevance_criteria, correctness_criteria, understandability_criteria, groundedness_criteria, completeness_criteria, language_criteria, complete_sentence_criteria
 
 load_dotenv()
+
+retrieval_caching = True
 
 all_criterias = [conciseness_criteria, relevance_criteria, correctness_criteria, understandability_criteria, groundedness_criteria, completeness_criteria, language_criteria, complete_sentence_criteria]
 
@@ -72,6 +77,24 @@ def save_to_db(params, stats, answers):
     result = collection.insert_one(document)
     print("Inserted document ID:", result.inserted_id)
 
+def cache_contexts(test_query, contexts):
+    """
+    save contexts in json format in cache directory
+    """
+    save_directory = "context_cache"
+    current_directory = os.getcwd()
+    new_directory_path = os.path.join(current_directory, save_directory)
+    if not os.path.exists(new_directory_path):
+    # Create the directory
+        os.mkdir(new_directory_path)
+
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    query_hash = hashlib.md5(test_query.encode('utf-8')).hexdigest()
+    file_name = f"context_{query_hash}.json"
+    file_path = save_directory + "/" + file_name
+    with open(file_path, 'w' ,encoding='utf-8') as file:
+        json.dump(contexts, file, ensure_ascii=False, indent=1)
+
 def process(retrieval, mn5, mongodb):
 
     # initiate model
@@ -112,9 +135,27 @@ def process(retrieval, mn5, mongodb):
             context = test_df["quote"][i]
             result["context"] = context
         else:
-            contexts = rag.get_contexts(test_query)
-            context = "".join([c[0].page_content for c in contexts])
-            doc_numbers = [c[0].metadata["Número de control"] for c in contexts]
+            if retrieval_caching:
+                query_hash = hashlib.md5(test_query.encode('utf-8')).hexdigest()
+                try:
+                    save_directory = "context_cache"
+                    file_name = f"context_{query_hash}.json"
+                    file_path = save_directory + "/" + file_name
+                    with open(file_path, "r") as file:
+                        context_json = json.load(file)
+                        context = context_json['context']
+                        doc_numbers = context_json['doc_numbers']
+                    print("Contexts loaded from cache.")
+                except Exception as e: # mainly FileNotFoundError
+                    print(e)
+                    print("Contexts not found in cache.")
+                    contexts = rag.get_contexts(test_query)
+                    context = "".join([c[0].page_content for c in contexts])
+                    doc_numbers = [c[0].metadata["Número de control"] for c in contexts]
+                    context_json = {"context": context, "doc_numbers": doc_numbers, "query": test_query}
+                    cache_contexts(test_query, context_json)
+                    print("Contexts cached.")
+            
             print(doc_numbers)
             result["context"] = context
 
@@ -130,8 +171,8 @@ def process(retrieval, mn5, mongodb):
 
         
 
-        # answer
-        answer = rag.predict_salamandra(test_query, context).strip()
+        answer = rag.predict_completions(test_query, context).strip()
+        #answer = rag.predict_flor(test_query, context).strip()
         result["answer"] = answer
         print("Answer:")
         print(answer)

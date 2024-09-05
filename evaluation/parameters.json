@@ -1,5 +1,5 @@
 {
-    "TESTSET_DIRECTORY" : "synthetic_test_set_100.jsonl",
+    "TESTSET_DIRECTORY" : "synthetic_test_set_354.jsonl",
 
     "EMBEDDINGS" : "BAAI/bge-m3",
     "CHUNK_SIZE": 1500,
@@ -11,8 +11,8 @@
     "RERANK_MODEL" : "BAAI/bge-reranker-v2-m3", 
     "RERANK_NUMBER_OF_CONTEXTS" : 10,
 
-    "ENDPOINT_LLM" : "",
-    "LLM" : "crodri/RAGGFlor6.3",
+    "ENDPOINT_LLM" : "https://ct0kk32tct8uoboc.us-east-1.aws.endpoints.huggingface.cloud/v1",
+    "LLM" : "meta-llama/Llama-2-7b-chat-hf",
 
     "MAX_NEW_TOKEN" : 700,
     "TOP_K" : 50,
@@ -21,5 +21,5 @@
     "REPETITION_PENALTY" : 1,
 
     "EVALUATION_LLM_ENDPOINT" : "",
-    "EVALUATION_LLM" : "TheBloke/Nous-Hermes-2-Mixtral-8x7B-DPO-GPTQ"
+    "EVALUATION_LLM" : "mistralai/Mixtral--8x7B-Instruct-v0.1"
 }

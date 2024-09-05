@@ -52,7 +52,8 @@ class RAG():
         """Initializes the RAG model, loads parameters, and sets up the vector store."""
         self.load_parameters()
         if self.parameters:
-            self.db = self.load_vectorestore()
+            #self.db = self.load_vectorestore()
+            self.db = None
         else:
             print("Failed to initialize model due to parameter loading issues.")
     
@@ -105,7 +106,7 @@ class RAG():
 
         return docs
         
-    def predict(self, instruction, context):
+    def predict_flor(self, instruction, context):
         """Generates a response based on the given instruction and context using an external API."""
 
         api_key = os.getenv("HF_TOKEN")
@@ -129,11 +130,11 @@ class RAG():
         }
         response = requests.post(self.parameters["ENDPOINT_LLM"], headers=headers, json=payload)
        
-
+        print(response.json())
 
         return response.json()[0]["generated_text"].split("###")[-1][8:]
     
-    def predict_salamandra(self, instruction, context):
+    def predict_completions(self, instruction, context, use_system_prompt=False):
 
         from openai import OpenAI
         
@@ -144,7 +145,7 @@ class RAG():
         )
 
         query = f"Context:\n{context}\n\nQuestion:\n{instruction}"
-        #sys_prompt = "You are a helpful assistant. Answer the question using only the context you are provided with. If it is not possible to do it with the context, just say 'I can't answer'. <|endoftext|>"
+        sys_prompt = "You are a helpful assistant. Answer the question using only the context you are provided with. If it is not possible to do it with the context, just say 'I can't answer'. Answer in the same language as the question."
 
         chat_completion = client.chat.completions.create(
             model="tgi",
@@ -155,10 +156,36 @@ class RAG():
             temperature=self.parameters["TEMPERATURE"],
             max_tokens=self.parameters["MAX_NEW_TOKEN"], 
             stream=False,
-            stop=["<|im_end|>"],
+            #stop=["<|im_end|>"],
             extra_body = {
                 "presence_penalty": self.parameters["REPETITION_PENALTY"] - 2,
                 "do_sample": False
             }
+        )
+        return(chat_completion.choices[0].message.content)
+
+    def predict_cerebras(self, instruction, context, use_system_prompt=False, model="llama3.1-8b"):
+
+        from cerebras.cloud.sdk import Cerebras
+
+        client = Cerebras(
+            # This is the default and can be omitted
+            api_key=os.environ.get("CEREBRAS_API_KEY"),
+            )
+
+        query = f"Context:\n{context}\n\nQuestion:\n{instruction}"
+        sys_prompt = "You are a helpful assistant. Answer the question using only the context you are provided with. If it is not possible to do it with the context, just say 'I can't answer'. Answer in the same language as the question."
+
+        messages = []
+        if use_system_prompt:
+            messages.append({"role": "system", "content": sys_prompt })
+        messages.append({"role": "user", "content": query})
+
+        chat_completion = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=self.parameters["TEMPERATURE"],
+            max_tokens=self.parameters["MAX_NEW_TOKEN"], 
+            stream=False,
         )
         return(chat_completion.choices[0].message.content)

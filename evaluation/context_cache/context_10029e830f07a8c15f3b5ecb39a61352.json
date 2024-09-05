@@ -1,0 +1,7 @@
+{
+ "context": "LLEI 4/2020, del 29 d'abril, de pressupostos de la Generalitat de Catalunya per al 2020.\norganització administrativa;pressupost regional;administració regional;política pressupostària\n\nArtículo 47. Fondo de Cooperación Local de Cataluña. Municipios1. La partida PR 15 D/460.0003/711 del presupuesto del Departamento de la Presidencia, con un importe de\n86.315.972,98 euros, se distribuye del siguiente modo:\na) Al municipio de Barcelona, 3.179.052,29 euros.b) Al resto de municipios de Cataluña, 83.136.920,69 euros, que deben distribuirse de acuerdo con los\nsiguientes criterios:\n1º. Atendiendo a la población como indicador de gasto, una cantidad para cada municipio, calculada de\nacuerdo con la siguiente fórmula:\nP = 25.940,29 + (H1 x 25,62) + (H2 x 10,09) + (H3 x 8,25) + (H4 x 4,91) + (H5 x 1,75)En la que:P = participación del municipioH1 = número de habitantes, cuando el municipio tiene entre 1 y 1.000H2 = número de habitantes, cuando el municipio tiene entre 1.001 y 5.000H3 = número de habitantes, cuando el municipio tiene entre 5.001 y 20.000H4 = número de habitantes, cuando el municipio tiene entre 20.001 y 50.000H5 = número de habitantes, cuando el municipio tiene más de 50.0002º. Atendiendo al mayor gasto asociado a la plurinuclearidad, 5.184.000 euros distribuidos entre los municipios",
+ "doc_numbers": [
+  "20120034"
+ ],
+ "query": "¿Cuál es el importe que se distribuye entre los municipios de Cataluña, según el artículo 47.1.b de la norma?"
+}
