@@ -39,8 +39,12 @@ vectorstore/
 - requirements.txt: required Python packages.
 
 
-### Evaluations
+### Evaluation
+
+Evaluation components and configurations for different language models.
+
 ```bash
+evaluation/
 ├── context_cache/
 ├── criterias.py
 ├── evaluation_prompt.py
@@ -65,3 +69,4 @@ vectorstore/
 ├── synthetic_test_set_354.json
 └── test_rag.py
 ```
+-  parameters.json: primary file for conducting evaluation experiments to identify the best parameters.
