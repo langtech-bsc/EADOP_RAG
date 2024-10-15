@@ -1,7 +1,34 @@
 #  EADOP RAG
-This repository contains a proof-of-concept Retrieval-Augmented Generation (RAG) system. The project aims to make legal content from the Portal Jurídic of the Generalitat de Cataluña accessible to a wider audience by allowing natural language queries, simplifying legal information retrieval for non-experts.
 
-### Application
+This repository contains a proof-of-concept Retrieval-Augmented Generation (RAG) system for the <em>Diari Oficial de la Generalitat de Catalunya (DOGC)</em>. The project aims to make legal content from the <em>Portal Jurídic of the Generalitat de Cataluña</em> accessible to a wider audience by allowing natural language queries, simplifying legal information retrieval for non-experts.
+
+While all the code for the implementation is contained in this repository, a live demo can be explored and cloned for reuse in this [Hugging Face space](https://huggingface.co/spaces/projecte-aina/EADOP_RAG).
+
+An overview of the elements in the repositories is provided below, but for a detailed usage explanation, please refer to each section's `README.md`.
+
+### [Vectorstore](https://github.com/langtech-bsc/EADOP_RAG/tree/main/vectorstore#readme)
+
+Implementation of the RAG using LangChain through the following steps:
+
+1. Reading data and splitting into chunks
+2. Creating and loading the vector store
+3. Retrieving documents (chunks)
+4. Integrating Large Language Model (LLM)
+
+```bash
+vectorstore/
+├── create_vectorstore.py
+├── EADOP.json
+├── normativa_UE_BSC_txt/
+└── requirements.txt
+```
+
+- `EADOP.json`: Data required to create the vector store:
+- `normativa_UE_BSC_txt`: European Union regulations in text format.
+- `create_vectorstore.py`: script to generate the vector store.
+- `requirements.txt`: required Python packages.
+
+### [Application](https://github.com/langtech-bsc/EADOP_RAG/tree/main/app#readme)
 
 Implementation of the frontend RAG using Gradio.
 
@@ -23,31 +50,13 @@ app/
 - rag.py: Model query handlers and response processing
 - input_reader.py, utils.py, handler.py: utilities
 
-### Vectorstore
-
-Implementation of the RAG using LangChain. 
-```bash
-vectorstore/
-├── create_vectorstore.py
-├── EADOP.json
-├── normativa_UE_BSC_txt/
-└── requirements.txt
-```
-
-- EADOP.json: Datarequired to create the vector store:
-- normativa_UE_BSC_txt: European Union regulations in text format.
-- create_vectorstore.py:  script to generate the vector store.
-- requirements.txt: required Python packages.
-
-
-### Evaluation
+### [Evaluation](https://github.com/langtech-bsc/EADOP_RAG/tree/main/evaluation#readme)
 
 Evaluation components and configurations for different language models.
 
 ```bash
 evaluation/
-.
-├── context_cache
+├── context_cache/
 ├── criterias.py
 ├── evaluation_prompt.py
 ├── evaluator.py
@@ -64,12 +73,12 @@ evaluation/
 ├── parameters.salamandra-instruct.json
 ├── parameters.salamandra-rag.json
 ├── rag.py
-├── README.md
+├── README.dm
 ├── requirements-mac.txt
 ├── requirements.txt
 ├── synthetic_test_set_100.jsonl
 ├── synthetic_test_set_354.json
-├── test_rag.py
-└── test_results
+└── test_rag.py
+└── rest results.py
 ```
--  parameters.json: primary file for conducting evaluation experiments to identify the best parameters.
+-  `parameters.json`: primary file for conducting evaluation experiments to identify the best parameters.
