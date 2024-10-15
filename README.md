@@ -46,7 +46,8 @@ Evaluation components and configurations for different language models.
 
 ```bash
 evaluation/
-├── context_cache/
+.
+├── context_cache
 ├── criterias.py
 ├── evaluation_prompt.py
 ├── evaluator.py
@@ -63,11 +64,12 @@ evaluation/
 ├── parameters.salamandra-instruct.json
 ├── parameters.salamandra-rag.json
 ├── rag.py
-├── README.dm
+├── README.md
 ├── requirements-mac.txt
 ├── requirements.txt
 ├── synthetic_test_set_100.jsonl
 ├── synthetic_test_set_354.json
-└── test_rag.py
+├── test_rag.py
+└── test_results
 ```
 -  parameters.json: primary file for conducting evaluation experiments to identify the best parameters.
