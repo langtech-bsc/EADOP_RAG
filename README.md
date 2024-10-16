@@ -96,7 +96,7 @@ evaluation/
 
 The model can be run on a local development setup using the docker  image for the text generation inference and pointing to the corrresponding model.
 
-Read the the following (Docker documentation)[https://github.com/huggingface/text-generation-inference?tab=readme-ov-file#docker] to run the text-generation-inference image.
-And the (Hugging Face documentation)[https://huggingface.co/docs/text-generation-inference/basic_tutorials/launcher] for detailed information about the launcher arguments.
+Read the the following [Docker documentation](https://github.com/huggingface/text-generation-inference?tab=readme-ov-file#docker) to run the text-generation-inference image.
+And the [Hugging Face documentation](https://huggingface.co/docs/text-generation-inference/basic_tutorials/launcher) for detailed information about the launcher arguments.
 
 
