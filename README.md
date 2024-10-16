@@ -82,7 +82,7 @@ evaluation/
 └── rest results.py
 ```
 - `parameters.json`: primary file for conducting evaluation experiments to identify the best parameters.
-- `parameters.*.json`: Configuration files containing hyperparameters for different models (like LLaMA, Mistral, Salamandra) used in the RAG system.
+- `parameters.*.json`: Configuration files containing hyperparameters for different models used in the RAG system.
 - `criterias.py`: Defines evaluation criteria to assess the system's performance.
 - `evaluation_prompt.py`: Handles the prompts used during the evaluation process to generate responses.
 - `evaluator.py`: Script that runs the evaluation, comparing generated outputs to expected results.
@@ -91,3 +91,12 @@ evaluation/
 - `synthetic_test_set_100.jsonl`: Synthetic test dataset in JSONL format with 100 test cases.
 - `synthetic_test_set_354.json`: Synthetic test dataset in JSON format with 354 test cases.
 - `test_rag.py`: Test script to run unit or integration tests for the RAG system during evaluation.
+
+### Deploy the model in a local development environment.
+
+The model can be run on a local development setup using the docker  image for the text generation inference and pointing to the corrresponding model.
+
+Read the the following (Docker documentation)[https://github.com/huggingface/text-generation-inference?tab=readme-ov-file#docker] to run the text-generation-inference image.
+And the (Hugging Face documentation)[https://huggingface.co/docs/text-generation-inference/basic_tutorials/launcher] for detailed information about the launcher arguments.
+
+
