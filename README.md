@@ -81,4 +81,13 @@ evaluation/
 └── test_rag.py
 └── rest results.py
 ```
--  `parameters.json`: primary file for conducting evaluation experiments to identify the best parameters.
+- `parameters.json`: primary file for conducting evaluation experiments to identify the best parameters.
+- `parameters.*.json`: Configuration files containing hyperparameters for different models (like LLaMA, Mistral, Salamandra) used in the RAG system.
+- `criterias.py`: Defines evaluation criteria to assess the system's performance.
+- `evaluation_prompt.py`: Handles the prompts used during the evaluation process to generate responses.
+- `evaluator.py`: Script that runs the evaluation, comparing generated outputs to expected results.
+- `interactive.py`: Enables interactive testing of the RAG system for real-time evaluation.
+- `rag.py`: Script for running the Retrieval-Augmented Generation system in evaluation mode.
+- `synthetic_test_set_100.jsonl`: Synthetic test dataset in JSONL format with 100 test cases.
+- `synthetic_test_set_354.json`: Synthetic test dataset in JSON format with 354 test cases.
+- `test_rag.py`: Test script to run unit or integration tests for the RAG system during evaluation.
