@@ -1,6 +1,6 @@
 #  EADOP RAG
 
-This repository contains a proof-of-concept Retrieval-Augmented Generation (RAG) system for the <em>Diari Oficial de la Generalitat de Catalunya (DOGC)</em>. The project aims to make legal content from the <em>Portal Jurídic of the Generalitat de Cataluña</em> accessible to a wider audience by allowing natural language queries, simplifying legal information retrieval for non-experts.
+This repository contains a proof-of-concept Retrieval-Augmented Generation (RAG) system for the <em>Diari Oficial de la Generalitat de Catalunya (DOGC)</em>. The project aims to make legal content from the <em>Portal Jurídic of the Generalitat de Catalunya</em> accessible to a wider audience by allowing natural language queries, simplifying legal information retrieval for non-experts.
 
 While all the code for the implementation is contained in this repository, a live demo can be explored and cloned for reuse in this [Hugging Face space](https://huggingface.co/spaces/projecte-aina/EADOP_RAG).
 
@@ -23,7 +23,7 @@ vectorstore/
 └── requirements.txt
 ```
 
-- `EADOP.json`: Data required to create the vector store:
+- `EADOP.json`: data required to create the vector store.
 - `normativa_UE_BSC_txt`: European Union regulations in text format.
 - `create_vectorstore.py`: script to generate the vector store.
 - `requirements.txt`: required Python packages.
@@ -44,11 +44,11 @@ app/
 ├── requirements.txt
 └── utils.py
 ```
-- index-BAAI_bge-m3. index files the vector-based retrieval system
-- requirements.txt: Required Python packages
-- app.py: Script to create User Interface reactivity
-- rag.py: Model query handlers and response processing
-- input_reader.py, utils.py, handler.py: utilities
+- index-BAAI_bge-m3. index files the vector-based retrieval system.
+- requirements.txt: required Python packages.
+- app.py: script to create user interface reactivity.
+- rag.py: model query handlers and response processing.
+- input_reader.py, utils.py, handler.py: script utilities.
 
 ### [Evaluation](https://github.com/langtech-bsc/EADOP_RAG/tree/main/evaluation#readme)
 
@@ -57,6 +57,7 @@ Evaluation components and configurations for different language models.
 ```bash
 evaluation/
 ├── context_cache/
+├── test_results/
 ├── criterias.py
 ├── evaluation_prompt.py
 ├── evaluator.py
@@ -81,16 +82,18 @@ evaluation/
 └── test_rag.py
 └── rest results.py
 ```
+- `context_cache/`: Contextual data generated during evaluations, each file holds the context retrieved for a query during the evaluation. 
+- `test_results/`: evaluation test results for the different models used.
 - `parameters.json`: primary file for conducting evaluation experiments to identify the best parameters.
-- `parameters.*.json`: Configuration files containing hyperparameters for different models used in the RAG system.
-- `criterias.py`: Defines evaluation criteria to assess the system's performance.
-- `evaluation_prompt.py`: Handles the prompts used during the evaluation process to generate responses.
-- `evaluator.py`: Script that runs the evaluation, comparing generated outputs to expected results.
-- `interactive.py`: Enables interactive testing of the RAG system for real-time evaluation.
-- `rag.py`: Script for running the Retrieval-Augmented Generation system in evaluation mode.
-- `synthetic_test_set_100.jsonl`: Synthetic test dataset in JSONL format with 100 test cases.
-- `synthetic_test_set_354.json`: Synthetic test dataset in JSON format with 354 test cases.
-- `test_rag.py`: Test script to run unit or integration tests for the RAG system during evaluation.
+- `parameters.*.json`: configuration files containing hyperparameters for different models used in the RAG system.
+- `criterias.py`: defines evaluation criteria to assess the system's performance.
+- `evaluation_prompt.py`: handles the prompts used during the evaluation process to generate responses.
+- `evaluator.py`: script that runs the evaluation, comparing generated outputs to expected results.
+- `interactive.py`: enables interactive testing of the RAG system for real-time evaluation.
+- `rag.py`: script for running the Retrieval-Augmented Generation system in evaluation mode.
+- `synthetic_test_set_100.jsonl`: synthetic test dataset in JSONL format with 100 test cases.
+- `synthetic_test_set_354.json`: synthetic test dataset in JSON format with 354 test cases.
+- `test_rag.py`: test script to run unit or integration tests for the RAG system during evaluation.
 
 ### Deploy the model in a local development environment.
 
