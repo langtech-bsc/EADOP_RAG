@@ -44,7 +44,7 @@ app/
 ├── requirements.txt
 └── utils.py
 ```
-- index-BAAI_bge-m3. index files the vector-based retrieval system.
+- index-BAAI_bge-m3: index files the vector-based retrieval system.
 - requirements.txt: required Python packages.
 - app.py: script to create user interface reactivity.
 - rag.py: model query handlers and response processing.
