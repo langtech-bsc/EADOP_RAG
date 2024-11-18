@@ -2,7 +2,7 @@
 
 This repository contains a proof-of-concept Retrieval-Augmented Generation (RAG) system for the <em>Diari Oficial de la Generalitat de Catalunya (DOGC)</em>. The project aims to make legal content from the <em>Portal Jurídic of the Generalitat de Catalunya</em> accessible to a wider audience by allowing natural language queries, simplifying legal information retrieval for non-experts.
 
-While all the code for the implementation is contained in this repository, a live demo can be explored and cloned for reuse in this [Hugging Face space](https://huggingface.co/spaces/projecte-aina/EADOP_RAG).
+While all the code for the implementation is contained in this repository, a live demo can be explored and cloned for reuse in this [Hugging Face space](https://huggingface.co/spaces/projecte-aina/EADOP-RAG).  
 
 An overview of the elements in the repositories is provided below, but for a detailed usage explanation, please refer to each section's `README.md`.
 
