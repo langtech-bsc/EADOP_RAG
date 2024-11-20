@@ -19,12 +19,10 @@ Implementation of the RAG using LangChain through the following steps:
 vectorstore/
 ├── create_vectorstore.py
 ├── EADOP.json
-├── normativa_UE_BSC_txt/
 └── requirements.txt
 ```
 
 - `EADOP.json`: data required to create the vector store.
-- `normativa_UE_BSC_txt`: European Union regulations in text format.
 - `create_vectorstore.py`: script to generate the vector store.
 - `requirements.txt`: required Python packages.
 
