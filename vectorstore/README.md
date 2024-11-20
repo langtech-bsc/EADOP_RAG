@@ -8,7 +8,7 @@ pip install -r requirements.txt
 
 2. Create vector store
 
-Prepare Data: Ensure that EADOP.json and normativa_UE_BSC_txt/ contain the necessary data files.
+Prepare Data: Ensure that EADOP.json contain the necessary data files.
 Run the Script: Execute create_vectorstore.py to generate the vector store.
 
 ```python

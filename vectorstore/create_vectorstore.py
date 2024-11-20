@@ -56,7 +56,7 @@ File Format:
 """
 
 # Path to the directory containing text archives for NORMATIVA UE, it could contain subdirectories or not
-NORMATIVA_UE_TEXT_DATA = "normativa_UE_BSC_txt/"
+# NORMATIVA_UE_TEXT_DATA = "normativa_UE_BSC_txt/"
 
 # Directory path to save VectorStore files
 DIST = "./vs/"
@@ -224,10 +224,11 @@ if __name__ == "__main__":
     # Load data from JSON loaders and text files
     data_ca = [doc for doc in loader_ca.load() if doc.page_content != ""]
     data_es = [doc for doc in loader_es.load() if doc.page_content != ""]
-    texts = load_txt_data(NORMATIVA_UE_TEXT_DATA)
+    #texts = load_txt_data(NORMATIVA_UE_TEXT_DATA)
     
     # Combine all loaded data
-    data = data_es + data_ca + texts
+    #data = data_es + data_ca + texts
+    data = data_es + data_ca
     
     # Create and save index using specified parameters and model
     vectorstore = create_index(data, MODEL_NAME, CHUNK_SIZE, CHUNK_OVERLAP, suffix="CA_ES_UE", dist=DIST)
