@@ -78,8 +78,9 @@ class EvaluateRetrieval():
             "answers" : results
         }
 
+        data = {"parameters": params, "stats": stats, "answers": results}
         utils.write_json(file_name = self.config["output"]["json_file"], 
-                         params = params, stats = stats, results = results)
+                         data = data)
         
         logging.info(f"* [{self.class_name}] Evaluation completed")
         logging.info(f"* [{self.class_name}] Results saved in {self.config['output']['json_file']}")

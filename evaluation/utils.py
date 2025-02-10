@@ -86,11 +86,10 @@ def prepare_json_filename_with_date(output_dir):
 
   return os.path.abspath(file_name)
 
-def write_json(file_name, params, stats, answers):
+def write_json(file_name, data):
   """
   save results in json format in save_dicrectory 
   """
 
-  outs = {"parameters": params, "stats": stats, "answers": answers}
   with open(file_name, 'w' ,encoding='utf-8') as file:
-      json.dump(outs, file, ensure_ascii=False, indent=1)
+      json.dump(data, file, ensure_ascii=False, indent=1)
