@@ -66,7 +66,7 @@ class EvaluateRetrieval():
         params = {
             "TESTSET_DIRECTORY" : self.config["input"]["testset_file"],
             "VS_DIRECTORY" : self.config["input"]["vectorstore_dir"],
-            "EMBEDDINGS_MODEL" : self.config["params"]["embeddings_modeu"],
+            "EMBEDDINGS_MODEL" : self.config["params"]["embeddings_model"],
             "NUMBER_OF_CHUNKS" : number_of_chunks
         }
 
