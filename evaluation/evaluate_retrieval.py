@@ -3,6 +3,7 @@ import logging
 from pprint import pprint
 import os
 import urllib
+from tqdm import tqdm
 
 class EvaluateRetrieval():
 
@@ -31,13 +32,15 @@ class EvaluateRetrieval():
 
     def process(self, test_df, db, number_of_chunks):
 
+        logging.info(f"* [{self.class_name}] Starting evaluation")
+
         # initialize score tracking
         results = []
         total = len(test_df)
         correct_retrieval = 0
 
         # evaluation
-        for i in range(total):
+        for i in tqdm(range(total), desc="Evaluating retrieval"):
             result = {}
 
             # query
@@ -77,6 +80,11 @@ class EvaluateRetrieval():
 
         utils.write_json(file_name = self.config["output"]["json_file"], 
                          params = params, stats = stats, results = results)
+        
+        logging.info(f"* [{self.class_name}] Evaluation completed")
+        logging.info(f"* [{self.class_name}] Results saved in {self.config['output']['json_file']}")
+        logging.info(f"* [{self.class_name}] {correct_retrieval} correct retrievals out of {total}: {stats['retrieval']}")
+
 
     def load_input_data(self):
 
