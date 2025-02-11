@@ -4,11 +4,10 @@ from pprint import pprint
 import os
 import urllib
 from tqdm import tqdm
+import warnings
 
-#
-# from huggingface_hub import snapshot_download, InferenceClient
-# from langchain_community.embeddings import HuggingFaceEmbeddings
-# from langchain_community.vectorstores import FAISS
+warnings.filterwarnings("ignore")
+
 
 class EvaluateRetrieval():
 
@@ -23,14 +22,6 @@ class EvaluateRetrieval():
                                                                     self.config["params"]["embeddings_model"])
         self.config["output"]["json_file"] = utils.prepare_json_filename_with_date(output_dir = self.config["output"]["dir"])
         self.show_config()
-
-        # 
-        # logging.info("Downloading vectorstore")
-        # vectorstore = snapshot_download(self.config["input"]["vectorstore_repo_name"])
-        # logging.info("Preparing embeddings")
-        # embeddings = HuggingFaceEmbeddings(model_name=self.config["params"]["embeddings_model"], model_kwargs={'device': 'cpu'})
-        # logging.info("Loading vectorstore")
-        # self.vectore_store = FAISS.load_local(vectorstore, embeddings, allow_dangerous_deserialization=True)#,
 
         # self.validate_config()
 
@@ -78,10 +69,16 @@ class EvaluateRetrieval():
                 correct_retrieval += 1
                 results.append(result)
 
+            logging.info(f"i={i}\ttest_query: {test_query}")
+            logging.info(f"i={i}\tstr(correct_wiki_url): {str(correct_wiki_url)}")
+            logging.info(f"i={i}\twiki_urls: {wiki_urls}")
+            logging.info(f"i={i}\tlen(results) = {len(results)}")
+            
         # save results
+        vs = self.config["input"]["vectorstore_dir"] if "vectorstore_dir" in self.config["input"] else self.config["input"]["vectorstore_repo_name"]
         params = {
-            "TESTSET_DIRECTORY" : self.config["input"]["testset_file"],
-            "VS_DIRECTORY" : self.config["input"]["vectorstore_dir"],
+            "TESTSET_FILE" : self.config["input"]["testset_file"],
+            "VS" : vs,
             "EMBEDDINGS_MODEL" : self.config["params"]["embeddings_model"],
             "NUMBER_OF_CHUNKS" : number_of_chunks
         }
