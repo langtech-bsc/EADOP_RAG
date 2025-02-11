@@ -5,6 +5,11 @@ import os
 import urllib
 from tqdm import tqdm
 
+#
+# from huggingface_hub import snapshot_download, InferenceClient
+# from langchain_community.embeddings import HuggingFaceEmbeddings
+# from langchain_community.vectorstores import FAISS
+
 class EvaluateRetrieval():
 
     def __init__(self, yaml_file: str):
@@ -12,12 +17,23 @@ class EvaluateRetrieval():
         utils.set_logger()
         self.class_name = __class__.__name__
         logging.info(f"* [{self.class_name}] Configuring class")
-        self.config = utils.load_yaml(yaml_file = yaml_file)        
-        self.config["input"]["model_dir"] = self.set_model_dir(self.config["input"]["gpfs_models_registry_dir"], 
-                                                                 self.config["params"]["embeddings_model"])
+        self.config = utils.load_yaml(yaml_file = yaml_file) 
+        if "gpfs_models_registry_dir" in self.config["input"]:
+            self.config["input"]["model_dir"] = self.set_model_dir(self.config["input"]["gpfs_models_registry_dir"], 
+                                                                    self.config["params"]["embeddings_model"])
         self.config["output"]["json_file"] = utils.prepare_json_filename_with_date(output_dir = self.config["output"]["dir"])
         self.show_config()
-        self.validate_config()
+
+        # 
+        # logging.info("Downloading vectorstore")
+        # vectorstore = snapshot_download(self.config["input"]["vectorstore_repo_name"])
+        # logging.info("Preparing embeddings")
+        # embeddings = HuggingFaceEmbeddings(model_name=self.config["params"]["embeddings_model"], model_kwargs={'device': 'cpu'})
+        # logging.info("Loading vectorstore")
+        # self.vectore_store = FAISS.load_local(vectorstore, embeddings, allow_dangerous_deserialization=True)#,
+
+        # self.validate_config()
+
 
     def __call__(self):
 
@@ -91,8 +107,84 @@ class EvaluateRetrieval():
 
         logging.info(f"* [{self.class_name}] Loading input data")
         test_df = utils.load_test_data(json_file = self.config["input"]["testset_file"])
-        db = utils.load_vectorstore(model_dir=self.config["input"]["model_dir"], 
-                                    vectorstore_dir=self.config["input"]["vectorstore_dir"])
+        # db = utils.load_vectorstore(embeddings_model = self.config["params"]["embeddings_model"], 
+        #                             vectorstore_repo_name = self.config["input"]["vectorstore_repo_name"])
+        # db = utils.load_vectorstore(model_dir=self.config["input"]["model_dir"], 
+        #                             vectorstore_dir=self.config["input"]["vectorstore_dir"])
+        ####################################################################################################
+        # DOUBT: is MN the same as HF downloaded?
+        #    VS     EMBED
+        # 1. HF     HF
+        # 2. HF     MN --> NOT TESTED
+        # 3. HF     HF downloaded
+        # 4. MN     HF --> NOT TESTED
+        # 5. MN     MN --> NOT TESTED --> this would be the replica of what we have in MN for both models
+        # 6. MN     HF downloaded --> NOT TESTED
+        # 7. HF downloaded     HF 
+        # 8. HF downloaded     MN --> NOT TESTED
+        # 9. HF downloaded     HF downloaded
+        ####################################################################################################
+        # TESTED
+        # 1. Both VS and EMBED models are downloaded from HuggingFace
+        #       vectorstore_repo_name: "langtech-dev/wikiqa_vs"
+        #       embeddings_model: "BAAI/bge-m3"
+        db = utils.load_vectorstore(vectorstore_repo_name = self.config["input"]["vectorstore_repo_name"],
+                                    embeddings_model = self.config["params"]["embeddings_model"])
+        ####################################################################################################
+        # 2. VS is HF, EMBED model is from MN
+        #       vectorstore_repo_name: "langtech-dev/wikiqa_vs"
+        #       embedding_model_dir: "/home/mumbert/Documentos/BSC/projects/mn-models/BAAI/bge-m3"
+        # db = utils.load_vectorstore(vectorstore_repo_name = self.config["input"]["vectorstore_repo_name"],
+        #                             embedding_model_dir = self.config["input"]["model_dir"])
+        ####################################################################################################
+        # 3. VS is HF, EMBED model is downloaded from HF
+        #       vectorstore_repo_name: "langtech-dev/wikiqa_vs"
+        #       embedding_model_dir: "/home/mumbert/Documentos/BSC/projects/hf-models/BAAI/bge-m3" --> from BAAI/bge-m3
+        # db = utils.load_vectorstore(vectorstore_repo_name = self.config["input"]["vectorstore_repo_name"],
+        #                             embedding_model_dir = self.config["input"]["model_dir"])
+        ####################################################################################################
+        # MISSING DATA TO TEST
+        # 4. VS from MareNostrum, EMBED from HF
+        #       vectorstore_dir: "/home/mumbert/Documentos/BSC/projects/mn-vs/wikiqa_vs/"
+        #       embeddings_model: "BAAI/bge-m3"
+        # db = utils.load_vectorstore(vectorstore_dir = self.config["input"]["vectorstore_dir"],
+        #                             embeddings_model = self.config["params"]["embeddings_model"])
+        ####################################################################################################
+        # MISSING DATA TO TEST
+        # 5. VS from MareNostrum, EMBED from MareNostrum
+        #       vectorstore_dir: "/home/mumbert/Documentos/BSC/projects/mn-vs/wikiqa_vs/"
+        #       model_dir: "/home/mumbert/Documentos/BSC/projects/mn-models/BAAI/bge-m3"
+        # db = utils.load_vectorstore(vectorstore_dir = self.config["input"]["vectorstore_dir"],
+        #                             model_dir = self.config["input"]["model_dir"])
+        ####################################################################################################
+        # MISSING DATA TO TEST
+        # 6. VS from MareNostrum, EMBED is downloaded from HF
+        #       vectorstore_dir: "/home/mumbert/Documentos/BSC/projects/mn-vs/wikiqa_vs/"
+        #       embedding_model_dir: "/home/mumbert/Documentos/BSC/projects/hf-models/BAAI/bge-m3" --> from BAAI/bge-m3
+        # db = utils.load_vectorstore(vectorstore_dir = self.config["input"]["vectorstore_dir"],
+        #                             embedding_model_dir = self.config["input"]["model_dir"])
+        ####################################################################################################
+        # TESTED
+        # 7. VS downloaded from HF, EMBED from HF
+        #       vectorstore_dir: "/home/mumbert/Documentos/BSC/projects/wikiqa_vs/"
+        #       embeddings_model: "BAAI/bge-m3"
+        # db = utils.load_vectorstore(vectorstore_dir = self.config["input"]["vectorstore_dir"],
+        #                             embeddings_model = self.config["params"]["embeddings_model"])
+        ####################################################################################################
+        # MISSING MN FOLDER TO TEST
+        # 8. VS downloaded from HF, EMBED from MareNostrum
+        #       vectorstore_dir: "/home/mumbert/Documentos/BSC/projects/wikiqa_vs/"
+        #       model_dir: "/home/mumbert/Documentos/BSC/projects/mn-models/BAAI/bge-m3"
+        # db = utils.load_vectorstore(vectorstore_dir = self.config["input"]["vectorstore_dir"],
+        #                             model_dir = self.config["input"]["model_dir"])
+        ####################################################################################################
+        # TESTED
+        # 9. VS downloaded from HF, EMBED is downloaded from HF
+        #       vectorstore_dir: "/home/mumbert/Documentos/BSC/projects/wikiqa_vs/" --> from langtech-dev/wikiqa_vs
+        #       embedding_model_dir: "/home/mumbert/Documentos/BSC/projects/hf-models/BAAI/bge-m3" --> from BAAI/bge-m3
+        # db = utils.load_vectorstore(vectorstore_dir = self.config["input"]["vectorstore_dir"],
+        #                             embedding_model_dir = self.config["input"]["model_dir"])
+        ####################################################################################################
 
         return test_df, db
 
