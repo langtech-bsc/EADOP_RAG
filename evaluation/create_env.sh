@@ -10,17 +10,20 @@ echo -e "$DELIM\nLoading config in file $CONFIG\n" && cat $CONFIG && echo -e "\n
 # TO BE ABLE CONDA INSIDE THE SCRIPT
 eval "$(conda shell.bash hook)"
 
-# STEPS
+# REMOVE ENVIRONMENT IF EXISTS
 conda activate base
-conda remove -n $CONDA_ENV --all -y
+cmd="conda remove -n $CONDA_ENV --all -y"
+echo -e "\n$cmd\n" && eval $cmd
+
+# CREATE CONDA ENVIRONMENT
 cmd="conda create --name $CONDA_ENV python=$PY_VERSION -y"
-echo -e "\n$cmd\n"
-eval $cmd
+echo -e "\n$cmd\n" && eval $cmd
 
 # HELPER COMMANDS TO CONNECT TO THE ENV
 conda env list
 cmd="conda activate $CONDA_ENV"
-echo $cmd && eval $cmd
-REQ="$SCRIPT_DIR/requirements.txt"
-pip install -r $REQ
+echo -e "\n$cmd\n" && eval $cmd
 
+# INSTALL REQUIREMENTS
+cmd="pip install -r $SCRIPT_DIR/$REQUIREMENTS"
+echo -e "\n$cmd\n" && eval $cmd
