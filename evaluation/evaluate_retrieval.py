@@ -35,8 +35,12 @@ class EvaluateRetrieval():
         else:
 
             config["input"]["model_dir"] = None
+
         if not "vectorstore_dir" in config["input"]:
             config["input"]["vectorstore_dir"] = None
+
+        if not "vectorstore_repo_name" in self.config["input"]:
+            config["input"]["vectorstore_repo_name"] = None
 
         config["output"]["json_file"] = utils.prepare_json_filename_with_date(output_dir = config["output"]["dir"])
 
