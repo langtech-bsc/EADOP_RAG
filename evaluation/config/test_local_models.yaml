@@ -1,10 +1,11 @@
 input:
   testset_file: "../data/ca_wikiqa_test_processedv2.json"
-  vectorstore_dir: "/gpfs/projects/bsc88/apps/marina/rag/complete_wiki/vs/normal/index-BAAI_bge-m3-2000-200-SentenceTransformersTokenTextSplitter"
-  gpfs_models_registry_dir: "/gpfs/projects/bsc88/hf-models/"
+  vectorstore_dir: "/home/mumbert/Documentos/BSC/projects/mn-models/index-BAAI_bge-m3-2000-200-SentenceTransformersTokenTextSplitter"
+  gpfs_models_registry_dir: "/home/mumbert/Documentos/BSC/projects/mn-models/"
 output:
   dir: "./test_results_evaluate_retrieval"
 params:
   embeddings_model: "BAAI/bge-m3"
   number_of_chunks: 1
   base_url: "https://ca.wikipedia.org/wiki/"
+  verbose: False
