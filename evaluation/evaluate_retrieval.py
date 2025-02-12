@@ -30,14 +30,15 @@ class EvaluateRetrieval():
 
         config = utils.load_yaml(yaml_file = yaml_file)
 
-        if "gpfs_models_registry_dir" in self.config["input"]:
-            self.config["input"]["model_dir"] = self.set_model_dir(self.config["input"]["gpfs_models_registry_dir"], 
-                                                                    self.config["params"]["embeddings_model"])
+        if "gpfs_models_registry_dir" in config["input"]:
+            config["input"]["model_dir"] = self.set_model_dir(config["input"]["gpfs_models_registry_dir"], 
+                                                              config["params"]["embeddings_model"])
         else:
-            self.config["input"]["model_dir"] = None
-        if not "vectorstore_dir" in self.config["input"]:
-            self.config["input"]["vectorstore_dir"] = None
-        self.config["output"]["json_file"] = utils.prepare_json_filename_with_date(output_dir = self.config["output"]["dir"])
+            config["input"]["model_dir"] = None
+        if not "vectorstore_dir" in config["input"]:
+            config["input"]["vectorstore_dir"] = None
+
+        config["output"]["json_file"] = utils.prepare_json_filename_with_date(output_dir = config["output"]["dir"])
 
         return config
 
@@ -53,7 +54,7 @@ class EvaluateRetrieval():
 
         # initialize score tracking
         results = []
-        total = len(test_df)
+        total = 2 # len(test_df)
         correct_retrieval = 0
 
         # evaluation
