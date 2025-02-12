@@ -7,4 +7,4 @@ params:
   embeddings_model: "BAAI/bge-m3"
   number_of_chunks: 1
   base_url: "https://ca.wikipedia.org/wiki/"
-
+  verbose: False
