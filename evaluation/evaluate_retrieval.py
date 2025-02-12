@@ -18,8 +18,7 @@ class EvaluateRetrieval():
         logging.info(f"* [{self.class_name}] Configuring class")
         self.config = self.prepare_config(yaml_file = yaml_file)
         self.show_config()
-
-        # self.validate_config()
+        self.validate_config()
 
     def __call__(self):
 
@@ -34,6 +33,7 @@ class EvaluateRetrieval():
             config["input"]["model_dir"] = self.set_model_dir(config["input"]["gpfs_models_registry_dir"], 
                                                               config["params"]["embeddings_model"])
         else:
+
             config["input"]["model_dir"] = None
         if not "vectorstore_dir" in config["input"]:
             config["input"]["vectorstore_dir"] = None
@@ -213,8 +213,8 @@ class EvaluateRetrieval():
 
         logging.info(f"* [{self.class_name}] Validating configuration")
         utils.check_files_exist([self.config["input"]["testset_file"]])
-        utils.check_folders_exist([self.config["input"]["vectorstore_dir"],
-                                   self.config["input"]["gpfs_models_registry_dir"]], create = False)
+        folders_to_check = [x for x in [self.config["input"]["vectorstore_dir"], self.config["input"]["model_dir"]] if x is not None]
+        utils.check_folders_exist(folder_list = folders_to_check, create = False)
         utils.check_folders_exist([self.config["output"]["dir"]], create = True)
 
 if __name__ == "__main__":
