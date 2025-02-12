@@ -22,9 +22,9 @@ def get_args_evaluate_retrieval():
 
     return args
 
-def set_logger():
+def set_logger(verbose: bool = False):
     """Logging configuration"""
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
