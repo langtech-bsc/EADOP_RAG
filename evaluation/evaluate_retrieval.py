@@ -16,20 +16,30 @@ class EvaluateRetrieval():
         utils.set_logger()
         self.class_name = __class__.__name__
         logging.info(f"* [{self.class_name}] Configuring class")
-        self.config = utils.load_yaml(yaml_file = yaml_file) 
-        if "gpfs_models_registry_dir" in self.config["input"]:
-            self.config["input"]["model_dir"] = self.set_model_dir(self.config["input"]["gpfs_models_registry_dir"], 
-                                                                    self.config["params"]["embeddings_model"])
-        self.config["output"]["json_file"] = utils.prepare_json_filename_with_date(output_dir = self.config["output"]["dir"])
+        self.config = self.prepare_config(yaml_file = yaml_file)
         self.show_config()
 
         # self.validate_config()
-
 
     def __call__(self):
 
         test_df, db = self.load_input_data()
         self.process(test_df, db, self.config["params"]["number_of_chunks"])
+
+    def prepare_config(self, yaml_file: str) -> dict:
+
+        config = utils.load_yaml(yaml_file = yaml_file)
+
+        if "gpfs_models_registry_dir" in self.config["input"]:
+            self.config["input"]["model_dir"] = self.set_model_dir(self.config["input"]["gpfs_models_registry_dir"], 
+                                                                    self.config["params"]["embeddings_model"])
+        else:
+            self.config["input"]["model_dir"] = None
+        if not "vectorstore_dir" in self.config["input"]:
+            self.config["input"]["vectorstore_dir"] = None
+        self.config["output"]["json_file"] = utils.prepare_json_filename_with_date(output_dir = self.config["output"]["dir"])
+
+        return config
 
     def get_wiki_url(self, title):
 
@@ -125,8 +135,11 @@ class EvaluateRetrieval():
         # 1. Both VS and EMBED models are downloaded from HuggingFace
         #       vectorstore_repo_name: "langtech-dev/wikiqa_vs"
         #       embeddings_model: "BAAI/bge-m3"
+        # embedding_model_dir: str = None, vectorstore_dir: str = None, embeddings_model: str = None, vectorstore_repo_name: str = None
         db = utils.load_vectorstore(vectorstore_repo_name = self.config["input"]["vectorstore_repo_name"],
-                                    embeddings_model = self.config["params"]["embeddings_model"])
+                                    embeddings_model = self.config["params"]["embeddings_model"],
+                                    vectorstore_dir = self.config["input"]["vectorstore_dir"],
+                                    embedding_model_dir = self.config["input"]["model_dir"])
         ####################################################################################################
         # 2. VS is HF, EMBED model is from MN
         #       vectorstore_repo_name: "langtech-dev/wikiqa_vs"
