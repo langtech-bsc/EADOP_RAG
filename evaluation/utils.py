@@ -36,34 +36,17 @@ def load_test_data(json_file) -> pd.DataFrame:
 
     return test_df
 
-# def load_vectorstore(model_dir: str, vectorstore_dir: str):
-#     """Loads the vector store with embeddings."""
-
-#     logging.info(f"\t- Loading existing vectore store...")
-#     embeddings = HuggingFaceEmbeddings(model_name=model_dir)
-#     db = FAISS.load_local(vectorstore_dir, embeddings, allow_dangerous_deserialization=True)
-
-#     return db
-
-# def load_vectorstore(embeddings_model: str, vectorstore_repo_name: str):
-#     """Loads the vector store with embeddings."""
-
-#     logging.info("Downloading vectorstore")
-#     vectorstore = snapshot_download(vectorstore_repo_name)
-#     logging.info("Preparing embeddings")
-#     embeddings = HuggingFaceEmbeddings(model_name=embeddings_model, model_kwargs={'device': 'cpu'})
-#     logging.info("Loading vectorstore")
-#     vectore_store = FAISS.load_local(vectorstore, embeddings, allow_dangerous_deserialization=True)#,
-
-#     return vectore_store
-
-def load_vectorstore(embedding_model_dir: str = None, vectorstore_dir: str = None, embeddings_model: str = None, vectorstore_repo_name: str = None):
+def load_vectorstore(embedding_model_dir: str = None, 
+                     vectorstore_dir: str = None, 
+                     embeddings_model: str = None, 
+                     vectorstore_model: str = None,
+                     force_download: bool = False):
 
     if (not embedding_model_dir and not embeddings_model):
         raise ValueError(f"Cannot prepare embeddings, missing either embedding_model_dir [{embedding_model_dir}] or embeddings_model [{embeddings_model}].")
     
-    if not vectorstore_repo_name and not vectorstore_dir:
-        raise ValueError(f"Cannot load vectorstore, missing either vectorstore_repo_name [{vectorstore_repo_name}] or vectorstore_dir [{vectorstore_dir}].")
+    if not vectorstore_model and not vectorstore_dir:
+        raise ValueError(f"Cannot load vectorstore, missing either vectorstore_model [{vectorstore_model}] or vectorstore_dir [{vectorstore_dir}].")
 
     logging.info("Preparing embeddings")
     if embedding_model_dir:
@@ -71,30 +54,14 @@ def load_vectorstore(embedding_model_dir: str = None, vectorstore_dir: str = Non
     else:
         embeddings = HuggingFaceEmbeddings(model_name=embeddings_model, model_kwargs={'device': 'cpu'})
 
-    if vectorstore_repo_name:
+    if vectorstore_model:
         logging.info("Downloading vectorstore")
-        vectorstore = snapshot_download(vectorstore_repo_name)
+        vectorstore = snapshot_download(vectorstore_model, force_download = force_download)
         logging.info("Loading vectorstore")
         db = FAISS.load_local(vectorstore, embeddings, allow_dangerous_deserialization=True)
     elif vectorstore_dir:
         logging.info("Loading vectorstore")
         db = FAISS.load_local(vectorstore_dir, embeddings, allow_dangerous_deserialization=True)
-
-    # if model_dir and vectorstore_dir:
-    #     logging.info(f"\t- Loading existing vectore store...")
-    #     embeddings = HuggingFaceEmbeddings(model_name=model_dir)
-    #     db = FAISS.load_local(vectorstore_dir, embeddings, allow_dangerous_deserialization=True)
-    # elif embeddings_model and vectorstore_repo_name:
-    #     logging.info("Downloading vectorstore")
-    #     vectorstore = snapshot_download(vectorstore_repo_name)
-    #     logging.info("Preparing embeddings")
-    #     embeddings = HuggingFaceEmbeddings(model_name=embeddings_model, model_kwargs={'device': 'cpu'})
-    #     logging.info("Loading vectorstore")
-    #     db = FAISS.load_local(vectorstore, embeddings, allow_dangerous_deserialization=True)
-    # elif model_dir and not vectorstore_dir:
-    #     embeddings = HuggingFaceEmbeddings(model_name=model_dir)
-    # elif not model_dir and not vectorstore_dir and not embeddings_model and not vectorstore_repo_name:
-    #     raise ValueError("No model_dir and vectorstore_dir or embeddings_model and vectorstore_repo_name provided.")
 
     return db
 
