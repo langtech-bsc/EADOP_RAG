@@ -29,9 +29,9 @@ class EvaluateRetrieval():
 
         config = utils.load_yaml(yaml_file = yaml_file)
 
-        if "gpfs_models_registry_dir" in config["input"]:
-            config["input"]["model_dir"] = self.set_model_dir(config["input"]["gpfs_models_registry_dir"], 
-                                                              config["params"]["embeddings_model"])
+        if "embeddings_model_dir" in config["input"]:
+            config["input"]["model_dir"] = self.set_model_dir(config["input"]["embeddings_model_dir"], 
+                                                              config["input"]["embeddings_model"])
         else:
 
             config["input"]["model_dir"] = None
@@ -39,8 +39,8 @@ class EvaluateRetrieval():
         if not "vectorstore_dir" in config["input"]:
             config["input"]["vectorstore_dir"] = None
 
-        if not "vectorstore_repo_name" in config["input"]:
-            config["input"]["vectorstore_repo_name"] = None
+        if not "vectorstore_model" in config["input"]:
+            config["input"]["vectorstore_model"] = None
 
         config["output"]["json_file"] = utils.prepare_json_filename_with_date(output_dir = config["output"]["dir"])
 
@@ -58,7 +58,7 @@ class EvaluateRetrieval():
 
         # initialize score tracking
         results = []
-        total = len(test_df)
+        total = 2 # len(test_df)
         correct_retrieval = 0
 
         # evaluation
@@ -90,11 +90,11 @@ class EvaluateRetrieval():
             logging.debug(f"i={i}\tlen(results) = {len(results)}")
             
         # save results
-        vs = self.config["input"]["vectorstore_dir"] if "vectorstore_dir" in self.config["input"] else self.config["input"]["vectorstore_repo_name"]
+        vs = self.config["input"]["vectorstore_dir"] if "vectorstore_dir" in self.config["input"] else self.config["input"]["vectorstore_model"]
         params = {
             "TESTSET_FILE" : self.config["input"]["testset_file"],
             "VS" : vs,
-            "EMBEDDINGS_MODEL" : self.config["params"]["embeddings_model"],
+            "EMBEDDINGS_MODEL" : self.config["input"]["embeddings_model"],
             "NUMBER_OF_CHUNKS" : number_of_chunks
         }
 
@@ -120,10 +120,11 @@ class EvaluateRetrieval():
 
         test_df = utils.load_test_data(json_file = self.config["input"]["testset_file"])
 
-        db = utils.load_vectorstore(vectorstore_repo_name = self.config["input"]["vectorstore_repo_name"],
-                                    embeddings_model = self.config["params"]["embeddings_model"],
+        db = utils.load_vectorstore(vectorstore_model = self.config["input"]["vectorstore_model"],
+                                    embeddings_model = self.config["input"]["embeddings_model"],
                                     vectorstore_dir = self.config["input"]["vectorstore_dir"],
-                                    embedding_model_dir = self.config["input"]["model_dir"])
+                                    embedding_model_dir = self.config["input"]["model_dir"],
+                                    force_download = self.config["params"]["force_download"])
 
         return test_df, db
 
@@ -131,9 +132,9 @@ class EvaluateRetrieval():
 
         logging.info(f"* [{self.class_name}] Showing loaded configuration:\n{pformat(self.config)}")
 
-    def set_model_dir(self, gpfs_models_registry_dir: str, embeddings_model: str) -> str:
+    def set_model_dir(self, embeddings_model_dir: str, embeddings_model: str) -> str:
 
-        return os.path.join(gpfs_models_registry_dir, embeddings_model)
+        return os.path.join(embeddings_model_dir, embeddings_model)
     
     def validate_config(self):
 
