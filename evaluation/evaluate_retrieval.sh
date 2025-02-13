@@ -4,7 +4,7 @@
 DELIM="##############################"
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 CONFIG_BASH="$SCRIPT_DIR/eadop_rag_evaluation.config"
-CONFIG_YAML="config/test.yaml"
+CONFIG_YAML="config/test_hf_models.yaml"
 
 # LOAD CONFIG
 . $CONFIG_BASH
