@@ -102,10 +102,10 @@ def check_folders_exist(folder_list: list, create: bool = False):
                 logging.info(f"\t- Creating folder: {folder}")
                 os.makedirs(folder, exist_ok=True)
 
-def prepare_json_filename_with_date(output_dir):
+def prepare_filename_with_date(output_dir, extension = "json"):
 
   timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-  file_name = os.path.join(output_dir, f"stats_{timestamp}.json")
+  file_name = os.path.join(output_dir, f"stats_{timestamp}.{extension}")
 
   return os.path.abspath(file_name)
 
