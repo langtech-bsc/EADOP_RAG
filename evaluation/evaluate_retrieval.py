@@ -5,6 +5,8 @@ import os
 import urllib
 from tqdm import tqdm
 import warnings
+import pandas as pd
+import itertools
 
 warnings.filterwarnings("ignore")
 
@@ -23,7 +25,41 @@ class EvaluateRetrieval():
     def __call__(self):
 
         test_df, db = self.load_input_data()
-        self.process(test_df, db, self.config["params"]["number_of_chunks"])
+        res = []
+
+        combinations = [combination for combination in itertools.product(self.config["params"]["number_of_chunks"], self.config["params"]["reranking"])]
+
+        for number_of_chunks, reranking in combinations:
+            results = self.process(test_df, db, number_of_chunks = number_of_chunks, reranking = reranking)
+
+            tests = results["stats"]["tests"]
+            retrieval = results["stats"]["retrieval"]
+            json_file = self.config["output"]["json_file"]
+
+            res.append({"number_of_chunks": number_of_chunks, 
+                        "reranking": reranking,
+                        "tests": tests, 
+                        "retrieval": retrieval, 
+                        "output_json": json_file})
+
+        logging.info(f"* [{self.class_name}] Saving results summary in {self.config['output']['csv_file']}")    
+        df = pd.DataFrame(res, columns=["number_of_chunks", "reranking", "tests", "retrieval", "output_json"])
+        df.to_csv(self.config["output"]["csv_file"], index = False)
+        
+        logging.info(f"* [{self.class_name}] Evaluation summary\n" + df.to_string(index=False))
+
+        logging.info(f"* [{self.class_name}] Evaluation completed")
+        
+
+    def set_max_evaluations(self, max_evaluations: int, n_eval: int) -> int:
+
+        max_evaluations = self.config["params"]["max_evaluations"]
+        if max_evaluations == -1:
+            logging.info(f"* [{self.class_name}] Setting max number of evaluations to {n_eval}")
+            return n_eval
+        else:
+            logging.info(f"* [{self.class_name}] Setting max number of evaluations to {max_evaluations}")
+            return max_evaluations
 
     def prepare_config(self, yaml_file: str) -> dict:
 
@@ -42,7 +78,7 @@ class EvaluateRetrieval():
         if not "vectorstore_model" in config["input"]:
             config["input"]["vectorstore_model"] = None
 
-        config["output"]["json_file"] = utils.prepare_json_filename_with_date(output_dir = config["output"]["dir"])
+        config["output"]["csv_file"] = utils.prepare_filename_with_date(output_dir = config["output"]["dir"], extension="csv")
 
         return config
 
@@ -52,13 +88,13 @@ class EvaluateRetrieval():
 
         return self.config["params"]["base_url"] + formatted_title
 
-    def process(self, test_df, db, number_of_chunks):
+    def process(self, test_df, db, number_of_chunks: int, reranking: bool = False):
 
-        logging.info(f"* [{self.class_name}] Starting evaluation")
+        logging.info(f"* [{self.class_name}] Starting evaluation with number_of_chunks = {number_of_chunks}")
 
         # initialize score tracking
         results = []
-        total = 2 # len(test_df)
+        total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
         correct_retrieval = 0
 
         # evaluation
@@ -89,30 +125,44 @@ class EvaluateRetrieval():
             logging.debug(f"i={i}\twiki_urls: {wiki_urls}")
             logging.debug(f"i={i}\tlen(results) = {len(results)}")
             
+        results = self.save_process_output(number_of_chunks = number_of_chunks, 
+                                           reranking = reranking,
+                                           total = total, 
+                                           correct_retrieval = correct_retrieval, 
+                                           results = results)
+        
+        return results
+
+    def save_process_output(self, number_of_chunks: int, reranking: bool, total: int, correct_retrieval: int, results: list):
+
         # save results
         vs = self.config["input"]["vectorstore_dir"] if "vectorstore_dir" in self.config["input"] else self.config["input"]["vectorstore_model"]
         params = {
             "TESTSET_FILE" : self.config["input"]["testset_file"],
             "VS" : vs,
             "EMBEDDINGS_MODEL" : self.config["input"]["embeddings_model"],
-            "NUMBER_OF_CHUNKS" : number_of_chunks
+            "NUMBER_OF_CHUNKS" : number_of_chunks,
+            "RERANKING" : reranking,
         }
 
         stats = {
             "tests" : total,
             "retrieval" : round(correct_retrieval/total, 2)
         }
-        results = {
+        answers = {
             "answers" : results
         }
 
-        data = {"parameters": params, "stats": stats, "answers": results}
+        self.config["output"]["json_file"] = utils.prepare_filename_with_date(output_dir = self.config["output"]["dir"], extension="json")
+        data = {"parameters": params, "stats": stats, "answers": answers}
         utils.write_json(file_name = self.config["output"]["json_file"], 
                          data = data)
         
         logging.info(f"* [{self.class_name}] Evaluation completed")
         logging.info(f"* [{self.class_name}] Results saved in {self.config['output']['json_file']}")
         logging.info(f"* [{self.class_name}] {correct_retrieval} correct retrievals out of {total}: {stats['retrieval']}")
+
+        return data
 
     def load_input_data(self):
 
