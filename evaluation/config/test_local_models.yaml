@@ -6,7 +6,9 @@ input:
 output:
   dir: "./test_results_evaluate_retrieval"
 params:
-  number_of_chunks: 1
+  number_of_chunks: [1]
   base_url: "https://ca.wikipedia.org/wiki/"
   verbose: False
   force_download: True
+  max_evaluations: 2
+  reranking: [False]
