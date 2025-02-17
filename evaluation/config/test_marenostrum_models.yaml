@@ -12,3 +12,4 @@ params:
   force_download: False
   max_evaluations: 2
   reranking: [False]
+  ncores: 1

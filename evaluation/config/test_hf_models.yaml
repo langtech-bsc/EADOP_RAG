@@ -5,9 +5,10 @@ input:
 output:
   dir: "./test_results_evaluate_retrieval"
 params:
-  number_of_chunks: [1, 2, 4, 8, 10]
+  number_of_chunks: [1, 2, 4, 8]
   base_url: "https://ca.wikipedia.org/wiki/"
   verbose: False
   force_download: False
-  max_evaluations: 2
+  max_evaluations: -1
   reranking: [False]
+  n_cores: 1
