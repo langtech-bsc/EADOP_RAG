@@ -7,6 +7,7 @@ from tqdm import tqdm
 import warnings
 import pandas as pd
 import itertools
+from multiprocessing import Pool
 
 warnings.filterwarnings("ignore")
 
@@ -24,13 +25,17 @@ class EvaluateRetrieval():
 
     def __call__(self):
 
-        test_df, db = self.load_input_data()
+        test_df, db = self.load_input_data()         
+
+        all_contexts = self.prepare_all_contexts(test_df, 
+                                                 db, 
+                                                 number_of_chunks = self.config["params"]["number_of_chunks"][-1], 
+                                                 n_cores = self.config["params"]["n_cores"])
+
         res = []
-
         combinations = [combination for combination in itertools.product(self.config["params"]["number_of_chunks"], self.config["params"]["reranking"])]
-
         for number_of_chunks, reranking in combinations:
-            results = self.process(test_df, db, number_of_chunks = number_of_chunks, reranking = reranking)
+            results = self.process(test_df, number_of_chunks = number_of_chunks, reranking = reranking, all_contexts = all_contexts)
 
             tests = results["stats"]["tests"]
             retrieval = results["stats"]["retrieval"]
@@ -88,7 +93,49 @@ class EvaluateRetrieval():
 
         return self.config["params"]["base_url"] + formatted_title
 
-    def process(self, test_df, db, number_of_chunks: int, reranking: bool = False):
+    def prepare_all_contexts(self, test_df, db, number_of_chunks, n_cores):
+
+        if False and n_cores > 1:
+            all_contexts = self.prepare_all_contexts_parallel(test_df, db, number_of_chunks, n_cores)
+        else:
+            all_contexts = self.prepare_all_contexts_single_thread(test_df, db, number_of_chunks)
+
+        return all_contexts
+
+    def prepare_all_contexts_single_thread(self, test_df, db, number_of_chunks: int):
+
+        logging.info(f"* [{self.class_name}] Preparing all contexts with number_of_chunks = {number_of_chunks}")
+
+        # initialize score tracking
+        all_contexts = []
+        total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
+
+        # evaluation
+        for i in tqdm(range(total), desc="Preparing all contexts"):
+
+            # query
+            test_query = test_df["answers"][i][0]["question"]
+
+            # retrieve chunks
+            contexts = db.similarity_search_with_score(test_query, k=number_of_chunks)
+            all_contexts.append(contexts)
+
+        return all_contexts
+
+    # def prepare_all_contexts_parallel(self, test_df, db, number_of_chunks: int, n_cores: int):
+
+    #     logging.info(f"* [{self.class_name}] Preparing all contexts with number_of_chunks = {number_of_chunks}")
+
+    #     # initialize score tracking
+    #     all_contexts = []
+    #     total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
+    #     args = [(db, test_df["answers"][i][0]["question"], number_of_chunks) for i in tqdm(range(total), desc="Preparing all contexts queries")]
+    #     with Pool(processes = n_cores) as pool:
+    #         all_contexts = pool.starmap(similarity_search_with_score_wrapper, args)
+
+    #     return all_contexts
+
+    def process(self, test_df, number_of_chunks: int, reranking: bool = False, all_contexts: list = []):
 
         logging.info(f"* [{self.class_name}] Starting evaluation with number_of_chunks = {number_of_chunks}")
 
@@ -106,7 +153,8 @@ class EvaluateRetrieval():
             result["question"] = test_query
 
             # retrieve chunks
-            contexts = db.similarity_search_with_score(test_query, k=number_of_chunks)
+            # contexts = db.similarity_search_with_score(test_query, k=number_of_chunks)
+            contexts = all_contexts[i][:number_of_chunks]
             context = "".join([c[0].page_content for c in contexts])
             result["context"] = context
             wiki_urls = [self.get_wiki_url(c[0].metadata["title"]) for c in contexts]
@@ -124,6 +172,8 @@ class EvaluateRetrieval():
             logging.debug(f"i={i}\tstr(correct_wiki_url): {str(correct_wiki_url)}")
             logging.debug(f"i={i}\twiki_urls: {wiki_urls}")
             logging.debug(f"i={i}\tlen(results) = {len(results)}")
+            logging.debug(f"i={i}\tcontext: {context}")
+            
             
         results = self.save_process_output(number_of_chunks = number_of_chunks, 
                                            reranking = reranking,
@@ -193,6 +243,11 @@ class EvaluateRetrieval():
         folders_to_check = [x for x in [self.config["input"]["vectorstore_dir"], self.config["input"]["model_dir"]] if x is not None]
         utils.check_folders_exist(folder_list = folders_to_check, create = False)
         utils.check_folders_exist([self.config["output"]["dir"]], create = True)
+
+def similarity_search_with_score_wrapper(args):
+
+    db, test_query, number_of_chunks = args
+    return db.similarity_search_with_score(test_query, k=number_of_chunks)
 
 if __name__ == "__main__":
   
