@@ -17,6 +17,7 @@ class EvaluateRetrieval():
     def __init__(self, yaml_file: str):
 
         self.class_name = __class__.__name__
+        self.yaml_file = yaml_file
         self.config = self.prepare_config(yaml_file = yaml_file)
         utils.set_logger(verbose = self.config["params"]["verbose"])
         logging.info(f"* [{self.class_name}] Configuring class")
@@ -29,7 +30,7 @@ class EvaluateRetrieval():
 
         all_contexts = self.prepare_all_contexts(test_df, 
                                                  db, 
-                                                 number_of_chunks = self.config["params"]["number_of_chunks"][-1], 
+                                                 number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
                                                  n_cores = self.config["params"]["n_cores"])
 
         res = []
@@ -74,7 +75,6 @@ class EvaluateRetrieval():
             config["input"]["model_dir"] = self.set_model_dir(config["input"]["embeddings_model_dir"], 
                                                               config["input"]["embeddings_model"])
         else:
-
             config["input"]["model_dir"] = None
 
         if not "vectorstore_dir" in config["input"]:
@@ -82,8 +82,9 @@ class EvaluateRetrieval():
 
         if not "vectorstore_model" in config["input"]:
             config["input"]["vectorstore_model"] = None
-
-        config["output"]["csv_file"] = utils.prepare_filename_with_date(output_dir = config["output"]["dir"], extension="csv")
+        
+        config["output"]["experiment"] = os.path.join(config["output"]["dir"], config["output"]["experiment_name"])
+        config["output"]["csv_file"] = utils.prepare_filename_with_date(output_dir = config["output"]["experiment"], extension="csv")
 
         return config
 
@@ -203,7 +204,7 @@ class EvaluateRetrieval():
             "answers" : results
         }
 
-        self.config["output"]["json_file"] = utils.prepare_filename_with_date(output_dir = self.config["output"]["dir"], extension="json")
+        self.config["output"]["json_file"] = utils.prepare_filename_with_date(output_dir = self.config["output"]["experiment"], extension="json")
         data = {"parameters": params, "stats": stats, "answers": answers}
         utils.write_json(file_name = self.config["output"]["json_file"], 
                          data = data)
@@ -241,8 +242,10 @@ class EvaluateRetrieval():
         logging.info(f"* [{self.class_name}] Validating configuration")
         utils.check_files_exist([self.config["input"]["testset_file"]])
         folders_to_check = [x for x in [self.config["input"]["vectorstore_dir"], self.config["input"]["model_dir"]] if x is not None]
+        utils.check_folders_do_not_exist(folder_list = [self.config["output"]["experiment"]])
         utils.check_folders_exist(folder_list = folders_to_check, create = False)
-        utils.check_folders_exist([self.config["output"]["dir"]], create = True)
+        utils.check_folders_exist([self.config["output"]["experiment"]], create = True)
+        utils.copy_file_to_folder(filename = self.yaml_file, folder = self.config["output"]["experiment"])
 
 def similarity_search_with_score_wrapper(args):
 
