@@ -1,0 +1,18 @@
+input:
+  #testset_file: "../data/ca_wikiqa_testplusvalidation_ca_questions.json"
+  testset_file: "../data/ca_wikiqa_test_processedv2.json"
+  #vectorstore_dir: "/gpfs/projects/bsc88/apps/marina/rag/complete_wiki/vs/normal/index-BAAI_bge-m3-2000-200-SentenceTransformersTokenTextSplitter"
+  vectorstore_repo_name: "langtech-dev/wikiqa_vs"
+  #vectorstore_dir: "/home/mumbert/Documentos/BSC/projects/wikiqa_vs/"
+  # gpfs_models_registry_dir: "/gpfs/projects/bsc88/hf-models/"
+  #gpfs_models_registry_dir: "/home/mumbert/Documentos/BSC/projects/hf-models/"
+  # gpfs_models_registry_dir: "/home/mumbert/Documentos/BSC/projects/mn-models/"
+  #
+output:
+  dir: "./test_results_evaluate_retrieval"
+params:
+  embeddings_model: "BAAI/bge-m3"
+  number_of_chunks: 1
+  base_url: "https://ca.wikipedia.org/wiki/"
+# env:
+#  machine: "local" # local | cluster
