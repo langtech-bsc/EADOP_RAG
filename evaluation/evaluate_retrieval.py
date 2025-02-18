@@ -8,9 +8,9 @@ import warnings
 import pandas as pd
 import itertools
 from multiprocessing import Pool
+from FlagEmbedding import FlagReranker
 
 warnings.filterwarnings("ignore")
-
 
 class EvaluateRetrieval():
 
@@ -26,17 +26,22 @@ class EvaluateRetrieval():
 
     def __call__(self):
 
-        test_df, db = self.load_input_data()         
+        test_df, db, reranker = self.load_input_data()         
 
-        all_contexts = self.prepare_all_contexts(test_df, 
-                                                 db, 
-                                                 number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
-                                                 n_cores = self.config["params"]["n_cores"])
+        all_contexts, all_scores = self.prepare_all_contexts(test_df, 
+                                                             db, 
+                                                             reranker,
+                                                             number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
+                                                             n_cores = self.config["params"]["n_cores"])
 
         res = []
         combinations = [combination for combination in itertools.product(self.config["params"]["number_of_chunks"], self.config["params"]["reranking"])]
         for number_of_chunks, reranking in combinations:
-            results = self.process(test_df, number_of_chunks = number_of_chunks, reranking = reranking, all_contexts = all_contexts)
+            results = self.process(test_df, 
+                                   number_of_chunks = number_of_chunks, 
+                                   reranking = reranking,
+                                   all_scores = all_scores, 
+                                   all_contexts = all_contexts)
 
             tests = results["stats"]["tests"]
             retrieval = results["stats"]["retrieval"]
@@ -94,34 +99,47 @@ class EvaluateRetrieval():
 
         return self.config["params"]["base_url"] + formatted_title
 
-    def prepare_all_contexts(self, test_df, db, number_of_chunks, n_cores):
+    def prepare_all_contexts(self, test_df, db, reranker, number_of_chunks, n_cores):
 
         if False and n_cores > 1:
             all_contexts = self.prepare_all_contexts_parallel(test_df, db, number_of_chunks, n_cores)
         else:
-            all_contexts = self.prepare_all_contexts_single_thread(test_df, db, number_of_chunks)
+            all_contexts, all_scores = self.prepare_all_contexts_single_thread(test_df, db, reranker, number_of_chunks)
 
-        return all_contexts
+        return all_contexts, all_scores
 
-    def prepare_all_contexts_single_thread(self, test_df, db, number_of_chunks: int):
+    def prepare_all_contexts_single_thread(self, test_df, db, reranker, number_of_chunks: int):
 
         logging.info(f"* [{self.class_name}] Preparing all contexts with number_of_chunks = {number_of_chunks}")
 
         # initialize score tracking
         all_contexts = []
+        all_scores = []
         total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
 
         # evaluation
-        for i in tqdm(range(total), desc="Preparing all contexts"):
+        msg = "Preparing all contexts"
+        if reranker:
+            msg += " and scores"
+        for i in tqdm(range(total), desc=msg):
 
             # query
             test_query = test_df["answers"][i][0]["question"]
 
             # retrieve chunks
             contexts = db.similarity_search_with_score(test_query, k=number_of_chunks)
-            all_contexts.append(contexts)
 
-        return all_contexts
+            # get scores
+            scores = []
+            if reranker:
+                data_pairs = [[test_query, c[0].page_content] for c in contexts]
+                scores = reranker.compute_score(data_pairs)
+
+            # save and iterate
+            all_contexts.append(contexts)
+            all_scores.append(scores)
+
+        return all_contexts, all_scores
 
     # def prepare_all_contexts_parallel(self, test_df, db, number_of_chunks: int, n_cores: int):
 
@@ -136,7 +154,7 @@ class EvaluateRetrieval():
 
     #     return all_contexts
 
-    def process(self, test_df, number_of_chunks: int, reranking: bool = False, all_contexts: list = []):
+    def process(self, test_df, number_of_chunks: int, reranking: bool, all_scores: list = [], all_contexts: list = []):
 
         logging.info(f"* [{self.class_name}] Starting evaluation with number_of_chunks = {number_of_chunks}")
 
@@ -156,6 +174,9 @@ class EvaluateRetrieval():
             # retrieve chunks
             # contexts = db.similarity_search_with_score(test_query, k=number_of_chunks)
             contexts = all_contexts[i][:number_of_chunks]
+            if reranking:
+                scores = all_scores[i][:number_of_chunks]
+                contexts = self.rerank_contexts(scores, contexts)
             context = "".join([c[0].page_content for c in contexts])
             result["context"] = context
             wiki_urls = [self.get_wiki_url(c[0].metadata["title"]) for c in contexts]
@@ -175,7 +196,6 @@ class EvaluateRetrieval():
             logging.debug(f"i={i}\tlen(results) = {len(results)}")
             logging.debug(f"i={i}\tcontext: {context}")
             
-            
         results = self.save_process_output(number_of_chunks = number_of_chunks, 
                                            reranking = reranking,
                                            total = total, 
@@ -183,6 +203,27 @@ class EvaluateRetrieval():
                                            results = results)
         
         return results
+
+    def rerank_contexts(self, scores, contexts: list) -> list:
+
+        # logging.info(f"* [{self.class_name}] Reranking contexts")
+
+        # if True:
+        #     data_pairs = [[test_query, c[0].page_content] for c in contexts]
+        #     scores = reranker.compute_score(data_pairs)
+        #     reranked_contexts = [c for _, c in sorted(zip(scores, contexts), reverse=True)]
+        # else:
+        #     data_pairs = [[test_query, c[0].page_content] for c in contexts]
+        #     logging.info(f"* [{self.class_name}] Length of data_pairs: {len(data_pairs)}")
+        #     scores = reranker.compute_score(data_pairs)
+        #     print(sorted(zip(scores, contexts), reverse=True))
+        #     reranked_contexts = [c for _, c in sorted(zip(scores, contexts), reverse=True)]
+
+        # data_pairs = [[test_query, c[0].page_content] for c in contexts]
+        # scores = reranker.compute_score(data_pairs)
+        reranked_contexts = [c for _, c in sorted(zip(scores, contexts), reverse=True)]
+
+        return reranked_contexts
 
     def save_process_output(self, number_of_chunks: int, reranking: bool, total: int, correct_retrieval: int, results: list):
 
@@ -227,7 +268,12 @@ class EvaluateRetrieval():
                                     embedding_model_dir = self.config["input"]["model_dir"],
                                     force_download = self.config["params"]["force_download"])
 
-        return test_df, db
+        reranker = None
+        if True in self.config["params"]["reranking"]:
+            logging.info(f"* [{self.class_name}] Loading reranking model: {self.config['input']['reranking_model']}")
+            reranker = FlagReranker(self.config["input"]["reranking_model"], use_fp16=True)
+
+        return test_df, db, reranker
 
     def show_config(self):
 
