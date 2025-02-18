@@ -6,6 +6,7 @@ import pandas as pd
 import json
 import datetime
 from datetime import datetime
+import shutil
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from huggingface_hub import snapshot_download, InferenceClient
@@ -102,17 +103,38 @@ def check_folders_exist(folder_list: list, create: bool = False):
                 logging.info(f"\t- Creating folder: {folder}")
                 os.makedirs(folder, exist_ok=True)
 
+def check_folders_do_not_exist(folder_list: list):
+
+    existing_folders = []
+
+    for folder in folder_list:
+        if os.path.exists(folder):
+            existing_folders.append(folder)
+
+    if existing_folders:
+        raise MissingFilesFolder(f"Existing files/folders: {existing_folders}. Please, remove them before proceeding or change it in the config file.")
+
 def prepare_filename_with_date(output_dir, extension = "json"):
 
-  timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-  file_name = os.path.join(output_dir, f"stats_{timestamp}.{extension}")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    file_name = os.path.join(output_dir, f"stats_{timestamp}.{extension}")
 
-  return os.path.abspath(file_name)
+    return os.path.abspath(file_name)
 
 def write_json(file_name, data):
-  """
-  save results in json format in save_dicrectory 
-  """
+    """
+    save results in json format in save_dicrectory 
+    """
 
-  with open(file_name, 'w' ,encoding='utf-8') as file:
-      json.dump(data, file, ensure_ascii=False, indent=1)
+    with open(file_name, 'w' ,encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False, indent=1)
+
+def copy_file_to_folder(filename : str, folder: str):
+
+    logging.info(f"Coping file {filename} to folder {folder}")
+
+    if not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
+
+    destination = os.path.join(folder, os.path.basename(filename))
+    shutil.copy(filename, destination)
