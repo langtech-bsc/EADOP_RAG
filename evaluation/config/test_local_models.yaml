@@ -5,8 +5,9 @@ input:
   embeddings_model: "BAAI/bge-m3"
 output:
   dir: "./test_results_evaluate_retrieval"
+  experiment_name: "test_local_models"
 params:
-  number_of_chunks: [1]
+  number_of_chunks: [1, 2, 4, 8]
   base_url: "https://ca.wikipedia.org/wiki/"
   verbose: False
   force_download: True

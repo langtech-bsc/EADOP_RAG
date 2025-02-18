@@ -5,6 +5,7 @@ input:
   embeddings_model: "BAAI/bge-m3"
 output:
   dir: "./test_results_evaluate_retrieval"
+  experiment_name: "test_marenostrum_models"
 params:
   number_of_chunks: [1]
   base_url: "https://ca.wikipedia.org/wiki/"

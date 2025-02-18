@@ -4,8 +4,9 @@ input:
   embeddings_model: "BAAI/bge-m3"
 output:
   dir: "./test_results_evaluate_retrieval"
+  experiment_name: "test_hf_models_no_reranking"
 params:
-  number_of_chunks: [1, 2, 4, 8]
+  number_of_chunks: [1, 2, 3, 4, 8, 10]
   base_url: "https://ca.wikipedia.org/wiki/"
   verbose: False
   force_download: False
