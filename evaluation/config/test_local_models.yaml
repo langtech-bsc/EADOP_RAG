@@ -3,14 +3,15 @@ input:
   vectorstore_dir: "/home/mumbert/Documentos/BSC/projects/mn-models/index-BAAI_bge-m3-2000-200-SentenceTransformersTokenTextSplitter"
   embeddings_model_dir: "/home/mumbert/Documentos/BSC/projects/mn-models/"
   embeddings_model: "BAAI/bge-m3"
+  reranking_model: "BAAI/bge-reranker-v2-m3"
 output:
   dir: "./test_results_evaluate_retrieval"
   experiment_name: "test_local_models"
 params:
-  number_of_chunks: [1, 2, 4, 8]
+  number_of_chunks: [1, 2]
   base_url: "https://ca.wikipedia.org/wiki/"
   verbose: False
   force_download: True
   max_evaluations: 2
-  reranking: [False]
+  reranking: [True]
   ncores: 1
