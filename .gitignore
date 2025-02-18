@@ -165,3 +165,7 @@ cython_debug/
 /models
 /rag
 /data
+
+# other
+vectorstores/
+.vscode/
