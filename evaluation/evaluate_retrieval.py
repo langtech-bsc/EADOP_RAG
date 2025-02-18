@@ -8,7 +8,11 @@ import warnings
 import pandas as pd
 import itertools
 from multiprocessing import Pool
-from FlagEmbedding import FlagReranker
+
+# reranker
+import torch
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+# from FlagEmbedding import FlagReranker
 
 warnings.filterwarnings("ignore")
 
@@ -26,11 +30,11 @@ class EvaluateRetrieval():
 
     def __call__(self):
 
-        test_df, db, reranker = self.load_input_data()         
+        test_df, db, self.tokenizer, self.reranker = self.load_input_data()         
 
         all_contexts, all_scores = self.prepare_all_contexts(test_df, 
                                                              db, 
-                                                             reranker,
+                                                             reranking = True in self.config["params"]["reranking"],
                                                              number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
                                                              n_cores = self.config["params"]["n_cores"])
 
@@ -79,8 +83,11 @@ class EvaluateRetrieval():
         if "embeddings_model_dir" in config["input"]:
             config["input"]["model_dir"] = self.set_model_dir(config["input"]["embeddings_model_dir"], 
                                                               config["input"]["embeddings_model"])
+            config["input"]["reranker_model_dir"] = self.set_model_dir(config["input"]["embeddings_model_dir"], 
+                                                                       config["input"]["reranking_model"])
         else:
             config["input"]["model_dir"] = None
+            config["input"]["reranker_model_dir"] = None
 
         if not "vectorstore_dir" in config["input"]:
             config["input"]["vectorstore_dir"] = None
@@ -90,6 +97,7 @@ class EvaluateRetrieval():
         
         config["output"]["experiment"] = os.path.join(config["output"]["dir"], config["output"]["experiment_name"])
         config["output"]["csv_file"] = utils.prepare_filename_with_date(output_dir = config["output"]["experiment"], extension="csv")
+        config["params"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         return config
 
@@ -99,16 +107,16 @@ class EvaluateRetrieval():
 
         return self.config["params"]["base_url"] + formatted_title
 
-    def prepare_all_contexts(self, test_df, db, reranker, number_of_chunks, n_cores):
+    def prepare_all_contexts(self, test_df, db, reranking, number_of_chunks, n_cores):
 
         if False and n_cores > 1:
             all_contexts = self.prepare_all_contexts_parallel(test_df, db, number_of_chunks, n_cores)
         else:
-            all_contexts, all_scores = self.prepare_all_contexts_single_thread(test_df, db, reranker, number_of_chunks)
+            all_contexts, all_scores = self.prepare_all_contexts_single_thread(test_df, db, reranking, number_of_chunks)
 
         return all_contexts, all_scores
 
-    def prepare_all_contexts_single_thread(self, test_df, db, reranker, number_of_chunks: int):
+    def prepare_all_contexts_single_thread(self, test_df, db, reranking, number_of_chunks: int):
 
         logging.info(f"* [{self.class_name}] Preparing all contexts with number_of_chunks = {number_of_chunks}")
 
@@ -119,7 +127,7 @@ class EvaluateRetrieval():
 
         # evaluation
         msg = "Preparing all contexts"
-        if reranker:
+        if reranking:
             msg += " and scores"
         for i in tqdm(range(total), desc=msg):
 
@@ -131,9 +139,13 @@ class EvaluateRetrieval():
 
             # get scores
             scores = []
-            if reranker:
+            if reranking:
                 data_pairs = [[test_query, c[0].page_content] for c in contexts]
-                scores = reranker.compute_score(data_pairs)
+                # scores = reranker.compute_score(data_pairs)
+                logging.info(f"data_pairs: {data_pairs}")
+                inputs = self.tokenizer(data_pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
+                logging.info(f"inputs: {inputs}")
+                scores = self.reranker(**inputs, return_dict=True).logits.view(-1, ).float()
 
             # save and iterate
             all_contexts.append(contexts)
@@ -269,11 +281,15 @@ class EvaluateRetrieval():
                                     force_download = self.config["params"]["force_download"])
 
         reranker = None
+        tokenizer = None
         if True in self.config["params"]["reranking"]:
             logging.info(f"* [{self.class_name}] Loading reranking model: {self.config['input']['reranking_model']}")
-            reranker = FlagReranker(self.config["input"]["reranking_model"], use_fp16=True)
+            # reranker = FlagReranker(self.config["input"]["reranking_model"], use_fp16=True)
+            tokenizer = AutoTokenizer.from_pretrained('BAAI/bge-reranker-v2-m3')
+            reranker = AutoModelForSequenceClassification.from_pretrained('BAAI/bge-reranker-v2-m3', device_map=self.config["params"]["device"])
+            reranker.eval()
 
-        return test_df, db, reranker
+        return test_df, db, tokenizer, reranker
 
     def show_config(self):
 
