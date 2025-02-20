@@ -78,7 +78,7 @@ class EvaluateRetrieval():
                             "output_json": json_file})
 
         logging.info(f"* [{self.class_name}] Saving results summary in {self.config['output']['csv_file']}")    
-        df = pd.DataFrame(res, columns=["number_of_chunks", "reranking", "tests", "retrieval", "output_json"])
+        df = pd.DataFrame(res, columns=["number_of_chunks", "number_of_chunks_after_reranking", "reranking", "tests", "retrieval", "output_json"])
         df.to_csv(self.config["output"]["csv_file"], index = False)
         
         logging.info(f"* [{self.class_name}] Evaluation summary\n" + df.to_string(index=False))
@@ -92,7 +92,7 @@ class EvaluateRetrieval():
         if True in self.config["params"]["reranking"]:
             logging.info(f"* [{self.class_name}] Loading reranking model: {self.config['input']['reranking_model']}")
             # reranker = FlagReranker(self.config["input"]["reranking_model"], use_fp16=True)
-            tokenizer = AutoTokenizer.from_pretrained(self.config["input"]["reranking_model"]).to(self.config["params"]["device"])
+            tokenizer = AutoTokenizer.from_pretrained(self.config["input"]["reranking_model"])
             reranker = AutoModelForSequenceClassification.from_pretrained(self.config["input"]["reranking_model"], 
                                                                           device_map=self.config["params"]["device"])
             reranker.eval()
@@ -235,14 +235,14 @@ class EvaluateRetrieval():
 
         logging.info(f"* [{self.class_name}] Preparing all scores")
 
-        tokenizer, reranker = self.load_reranker()
-
         # initialize score tracking
         all_scores = []
 
         if not reranking:
             return all_scores
-        
+
+        tokenizer, reranker = self.load_reranker()
+
         total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
 
         # evaluation
@@ -306,7 +306,7 @@ class EvaluateRetrieval():
                 scores = all_scores[i][:number_of_chunks]
                 contexts = self.rerank_contexts(scores, contexts)
                 contexts = contexts[:number_of_chunks_after_reranking]
-                
+
             context = "".join([c[0].page_content for c in contexts])
             result["context"] = context
             wiki_urls = [self.get_wiki_url(c[0].metadata["title"]) for c in contexts]
@@ -327,6 +327,7 @@ class EvaluateRetrieval():
             logging.debug(f"i={i}\tcontext: {context}")
             
         results = self.save_process_output(number_of_chunks = number_of_chunks, 
+                                           number_of_chunks_after_reranking = number_of_chunks_after_reranking,
                                            reranking = reranking,
                                            total = total, 
                                            correct_retrieval = correct_retrieval, 
@@ -355,7 +356,7 @@ class EvaluateRetrieval():
 
         return reranked_contexts
 
-    def save_process_output(self, number_of_chunks: int, reranking: bool, total: int, correct_retrieval: int, results: list):
+    def save_process_output(self, number_of_chunks: int, number_of_chunks_after_reranking: int, reranking: bool, total: int, correct_retrieval: int, results: list):
 
         # save results
         vs = self.config["input"]["vectorstore_dir"] if "vectorstore_dir" in self.config["input"] else self.config["input"]["vectorstore_model"]
@@ -364,6 +365,7 @@ class EvaluateRetrieval():
             "VS" : vs,
             "EMBEDDINGS_MODEL" : self.config["input"]["embeddings_model"],
             "NUMBER_OF_CHUNKS" : number_of_chunks,
+            "NUMBER_OF_CHUNKS_AFTER_RERANKING" : number_of_chunks_after_reranking,
             "RERANKING" : reranking,
         }
 
