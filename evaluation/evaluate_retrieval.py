@@ -52,21 +52,30 @@ class EvaluateRetrieval():
         res = []
         combinations = [combination for combination in itertools.product(self.config["params"]["number_of_chunks"], self.config["params"]["reranking"])]
         for number_of_chunks, reranking in combinations:
-            results = self.process(test_df, 
-                                   number_of_chunks = number_of_chunks, 
-                                   reranking = reranking,
-                                   all_scores = all_scores, 
-                                   all_contexts = all_contexts)
+            if reranking:
+                number_of_chunks_after_reranking = [ch for ch in self.config["params"]["number_of_chunks"] if ch <= number_of_chunks]
+            else:
+                number_of_chunks_after_reranking = [None]
 
-            tests = results["stats"]["tests"]
-            retrieval = results["stats"]["retrieval"]
-            json_file = self.config["output"]["json_file"]
+            for n_ch_after_reranking in number_of_chunks_after_reranking:
 
-            res.append({"number_of_chunks": number_of_chunks, 
-                        "reranking": reranking,
-                        "tests": tests, 
-                        "retrieval": retrieval, 
-                        "output_json": json_file})
+                results = self.process(test_df, 
+                                    number_of_chunks = number_of_chunks, 
+                                    number_of_chunks_after_reranking = n_ch_after_reranking,
+                                    reranking = reranking,
+                                    all_scores = all_scores, 
+                                    all_contexts = all_contexts)
+
+                tests = results["stats"]["tests"]
+                retrieval = results["stats"]["retrieval"]
+                json_file = self.config["output"]["json_file"]
+
+                res.append({"number_of_chunks": number_of_chunks, 
+                            "number_of_chunks_after_reranking": n_ch_after_reranking,
+                            "reranking": reranking,
+                            "tests": tests, 
+                            "retrieval": retrieval, 
+                            "output_json": json_file})
 
         logging.info(f"* [{self.class_name}] Saving results summary in {self.config['output']['csv_file']}")    
         df = pd.DataFrame(res, columns=["number_of_chunks", "reranking", "tests", "retrieval", "output_json"])
@@ -83,7 +92,7 @@ class EvaluateRetrieval():
         if True in self.config["params"]["reranking"]:
             logging.info(f"* [{self.class_name}] Loading reranking model: {self.config['input']['reranking_model']}")
             # reranker = FlagReranker(self.config["input"]["reranking_model"], use_fp16=True)
-            tokenizer = AutoTokenizer.from_pretrained(self.config["input"]["reranking_model"])
+            tokenizer = AutoTokenizer.from_pretrained(self.config["input"]["reranking_model"]).to(self.config["params"]["device"])
             reranker = AutoModelForSequenceClassification.from_pretrained(self.config["input"]["reranking_model"], 
                                                                           device_map=self.config["params"]["device"])
             reranker.eval()
@@ -127,6 +136,8 @@ class EvaluateRetrieval():
             os.environ["PYDEVD_WARN_EVALUATION_TIMEOUT"] = str(config["params"]["PYDEVD_WARN_EVALUATION_TIMEOUT"])
         if "PYDEVD_UNBLOCK_THREADS_TIMEOUT" in config["params"]:
             os.environ["PYDEVD_UNBLOCK_THREADS_TIMEOUT"] = str(config["params"]["PYDEVD_UNBLOCK_THREADS_TIMEOUT"])
+        if "TOKENIZERS_PARALLELISM" in config["params"]:
+            os.environ["TOKENIZERS_PARALLELISM"] = str(config["params"]["TOKENIZERS_PARALLELISM"])
 
         return config
 
@@ -251,6 +262,7 @@ class EvaluateRetrieval():
                 # scores = reranker.compute_score(data_pairs)
                 logging.debug(f"data_pairs: {data_pairs}")
                 inputs = tokenizer(data_pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
+                inputs.to(self.config["params"]["device"])
                 logging.debug(f"inputs: {inputs}")
                 scores = reranker(**inputs, return_dict=True).logits.view(-1, ).float()
             else:
@@ -264,7 +276,13 @@ class EvaluateRetrieval():
 
         return all_scores
 
-    def process(self, test_df, number_of_chunks: int, reranking: bool, all_scores: list = [], all_contexts: list = []):
+    def process(self, 
+                test_df, 
+                number_of_chunks: int, 
+                number_of_chunks_after_reranking: int, 
+                reranking: bool, 
+                all_scores: list = [], 
+                all_contexts: list = []):
 
         logging.info(f"* [{self.class_name}] Starting evaluation with number_of_chunks = {number_of_chunks}")
 
@@ -287,6 +305,8 @@ class EvaluateRetrieval():
             if reranking:
                 scores = all_scores[i][:number_of_chunks]
                 contexts = self.rerank_contexts(scores, contexts)
+                contexts = contexts[:number_of_chunks_after_reranking]
+                
             context = "".join([c[0].page_content for c in contexts])
             result["context"] = context
             wiki_urls = [self.get_wiki_url(c[0].metadata["title"]) for c in contexts]
@@ -402,7 +422,7 @@ class EvaluateRetrieval():
         logging.info(f"* [{self.class_name}] Validating configuration")
         utils.check_files_exist([self.config["input"]["testset_file"]])
         folders_to_check = [x for x in [self.config["input"]["vectorstore_dir"], self.config["input"]["model_dir"]] if x is not None]
-        utils.check_folders_do_not_exist(folder_list = [self.config["output"]["experiment"]])
+        #utils.check_folders_do_not_exist(folder_list = [self.config["output"]["experiment"]])
         utils.check_folders_exist(folder_list = folders_to_check, create = False)
         utils.check_folders_exist([self.config["output"]["experiment"]], create = True)
         utils.copy_file_to_folder(filename = self.yaml_file, folder = self.config["output"]["experiment"])
