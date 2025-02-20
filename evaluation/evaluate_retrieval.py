@@ -30,13 +30,24 @@ class EvaluateRetrieval():
 
     def __call__(self):
 
-        test_df, db, self.tokenizer, self.reranker = self.load_input_data()         
+        # test_df, db, self.tokenizer, self.reranker = self.load_input_data()         
 
-        all_contexts, all_scores = self.prepare_all_contexts(test_df, 
-                                                             db, 
-                                                             reranking = True in self.config["params"]["reranking"],
-                                                             number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
-                                                             n_cores = self.config["params"]["n_cores"])
+        # all_contexts, all_scores = self.prepare_all_contexts(test_df, 
+        #                                                      db, 
+        #                                                      reranking = True in self.config["params"]["reranking"],
+        #                                                      number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
+        #                                                      n_cores = self.config["params"]["n_cores"])
+
+        test_df, db = self.load_input_data()         
+        all_contexts = self.prepare_all_contexts(test_df, 
+                                                 db, 
+                                                 number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
+                                                 n_cores = self.config["params"]["n_cores"])
+
+        del db
+        # self.tokenizer, self.reranker = self.load_reranker()
+        all_scores = self.prepare_all_scores_single_thread(all_contexts, test_df,
+                                                           reranking = True in self.config["params"]["reranking"])
 
         res = []
         combinations = [combination for combination in itertools.product(self.config["params"]["number_of_chunks"], self.config["params"]["reranking"])]
@@ -65,6 +76,19 @@ class EvaluateRetrieval():
 
         logging.info(f"* [{self.class_name}] Evaluation completed")
         
+    def load_reranker(self):
+
+        reranker = None
+        tokenizer = None
+        if True in self.config["params"]["reranking"]:
+            logging.info(f"* [{self.class_name}] Loading reranking model: {self.config['input']['reranking_model']}")
+            # reranker = FlagReranker(self.config["input"]["reranking_model"], use_fp16=True)
+            tokenizer = AutoTokenizer.from_pretrained(self.config["input"]["reranking_model"])
+            reranker = AutoModelForSequenceClassification.from_pretrained(self.config["input"]["reranking_model"], 
+                                                                          device_map=self.config["params"]["device"])
+            reranker.eval()
+
+        return tokenizer, reranker
 
     def set_max_evaluations(self, max_evaluations: int, n_eval: int) -> int:
 
@@ -99,6 +123,11 @@ class EvaluateRetrieval():
         config["output"]["csv_file"] = utils.prepare_filename_with_date(output_dir = config["output"]["experiment"], extension="csv")
         config["params"]["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+        if "PYDEVD_WARN_EVALUATION_TIMEOUT" in config["params"]:
+            os.environ["PYDEVD_WARN_EVALUATION_TIMEOUT"] = str(config["params"]["PYDEVD_WARN_EVALUATION_TIMEOUT"])
+        if "PYDEVD_UNBLOCK_THREADS_TIMEOUT" in config["params"]:
+            os.environ["PYDEVD_UNBLOCK_THREADS_TIMEOUT"] = str(config["params"]["PYDEVD_UNBLOCK_THREADS_TIMEOUT"])
+
         return config
 
     def get_wiki_url(self, title):
@@ -107,28 +136,27 @@ class EvaluateRetrieval():
 
         return self.config["params"]["base_url"] + formatted_title
 
-    def prepare_all_contexts(self, test_df, db, reranking, number_of_chunks, n_cores):
+    def prepare_all_contexts(self, test_df, db, number_of_chunks, n_cores):
 
         if False and n_cores > 1:
             all_contexts = self.prepare_all_contexts_parallel(test_df, db, number_of_chunks, n_cores)
         else:
-            all_contexts, all_scores = self.prepare_all_contexts_single_thread(test_df, db, reranking, number_of_chunks)
+            all_contexts = self.prepare_all_contexts_single_thread(test_df, db, number_of_chunks)
 
-        return all_contexts, all_scores
+        return all_contexts
 
-    def prepare_all_contexts_single_thread(self, test_df, db, reranking, number_of_chunks: int):
+    def prepare_all_contexts_single_thread(self, test_df, db, number_of_chunks: int):
 
         logging.info(f"* [{self.class_name}] Preparing all contexts with number_of_chunks = {number_of_chunks}")
 
         # initialize score tracking
         all_contexts = []
-        all_scores = []
         total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
 
         # evaluation
         msg = "Preparing all contexts"
-        if reranking:
-            msg += " and scores"
+        # if reranking:
+        #     msg += " and scores"
         for i in tqdm(range(total), desc=msg):
 
             # query
@@ -137,21 +165,47 @@ class EvaluateRetrieval():
             # retrieve chunks
             contexts = db.similarity_search_with_score(test_query, k=number_of_chunks)
 
-            # get scores
-            scores = []
-            if reranking:
-                data_pairs = [[test_query, c[0].page_content] for c in contexts]
-                # scores = reranker.compute_score(data_pairs)
-                logging.info(f"data_pairs: {data_pairs}")
-                inputs = self.tokenizer(data_pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
-                logging.info(f"inputs: {inputs}")
-                scores = self.reranker(**inputs, return_dict=True).logits.view(-1, ).float()
-
             # save and iterate
             all_contexts.append(contexts)
-            all_scores.append(scores)
 
-        return all_contexts, all_scores
+        return all_contexts
+
+    # def prepare_all_contexts_single_thread(self, test_df, db, reranking, number_of_chunks: int):
+
+    #     logging.info(f"* [{self.class_name}] Preparing all contexts with number_of_chunks = {number_of_chunks}")
+
+    #     # initialize score tracking
+    #     all_contexts = []
+    #     all_scores = []
+    #     total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
+
+    #     # evaluation
+    #     msg = "Preparing all contexts"
+    #     if reranking:
+    #         msg += " and scores"
+    #     for i in tqdm(range(total), desc=msg):
+
+    #         # query
+    #         test_query = test_df["answers"][i][0]["question"]
+
+    #         # retrieve chunks
+    #         contexts = db.similarity_search_with_score(test_query, k=number_of_chunks)
+
+    #         # get scores
+    #         scores = []
+    #         if reranking:
+    #             data_pairs = [[test_query, c[0].page_content] for c in contexts]
+    #             # scores = reranker.compute_score(data_pairs)
+    #             logging.info(f"data_pairs: {data_pairs}")
+    #             inputs = self.tokenizer(data_pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
+    #             logging.info(f"inputs: {inputs}")
+    #             scores = self.reranker(**inputs, return_dict=True).logits.view(-1, ).float()
+
+    #         # save and iterate
+    #         all_contexts.append(contexts)
+    #         all_scores.append(scores)
+
+    #     return all_contexts, all_scores
 
     # def prepare_all_contexts_parallel(self, test_df, db, number_of_chunks: int, n_cores: int):
 
@@ -165,6 +219,50 @@ class EvaluateRetrieval():
     #         all_contexts = pool.starmap(similarity_search_with_score_wrapper, args)
 
     #     return all_contexts
+
+    def prepare_all_scores_single_thread(self, all_contexts, test_df, reranking):
+
+        logging.info(f"* [{self.class_name}] Preparing all scores")
+
+        tokenizer, reranker = self.load_reranker()
+
+        # initialize score tracking
+        all_scores = []
+
+        if not reranking:
+            return all_scores
+        
+        total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
+
+        # evaluation
+        msg = "Preparing all scores"
+        for i in tqdm(range(total), desc=msg):
+
+            # query
+            test_query = test_df["answers"][i][0]["question"]
+
+            # retrieve chunks
+            contexts = all_contexts[i]
+
+            # get scores
+            scores = []
+            if True:
+                data_pairs = [[test_query, c[0].page_content] for c in contexts]
+                # scores = reranker.compute_score(data_pairs)
+                logging.debug(f"data_pairs: {data_pairs}")
+                inputs = tokenizer(data_pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
+                logging.debug(f"inputs: {inputs}")
+                scores = reranker(**inputs, return_dict=True).logits.view(-1, ).float()
+            else:
+                for c in contexts:
+                    data_pair = [test_query, c[0].page_content]
+                    inputs = tokenizer([data_pair], padding=True, truncation=True, return_tensors='pt', max_length=512)
+                    scores.append(reranker(**inputs, return_dict=True).logits.view(-1, ).float())
+
+            # save and iterate
+            all_scores.append(scores.tolist())
+
+        return all_scores
 
     def process(self, test_df, number_of_chunks: int, reranking: bool, all_scores: list = [], all_contexts: list = []):
 
@@ -280,16 +378,16 @@ class EvaluateRetrieval():
                                     embedding_model_dir = self.config["input"]["model_dir"],
                                     force_download = self.config["params"]["force_download"])
 
-        reranker = None
-        tokenizer = None
-        if True in self.config["params"]["reranking"]:
-            logging.info(f"* [{self.class_name}] Loading reranking model: {self.config['input']['reranking_model']}")
-            # reranker = FlagReranker(self.config["input"]["reranking_model"], use_fp16=True)
-            tokenizer = AutoTokenizer.from_pretrained('BAAI/bge-reranker-v2-m3')
-            reranker = AutoModelForSequenceClassification.from_pretrained('BAAI/bge-reranker-v2-m3', device_map=self.config["params"]["device"])
-            reranker.eval()
+        # reranker = None
+        # tokenizer = None
+        # if True in self.config["params"]["reranking"]:
+        #     logging.info(f"* [{self.class_name}] Loading reranking model: {self.config['input']['reranking_model']}")
+        #     # reranker = FlagReranker(self.config["input"]["reranking_model"], use_fp16=True)
+        #     tokenizer = AutoTokenizer.from_pretrained('BAAI/bge-reranker-v2-m3')
+        #     reranker = AutoModelForSequenceClassification.from_pretrained('BAAI/bge-reranker-v2-m3', device_map=self.config["params"]["device"])
+        #     reranker.eval()
 
-        return test_df, db, tokenizer, reranker
+        return test_df, db #, tokenizer, reranker
 
     def show_config(self):
 
