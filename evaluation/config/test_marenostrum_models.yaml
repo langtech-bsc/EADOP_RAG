@@ -15,3 +15,5 @@ params:
   max_evaluations: 2
   reranking: [True]
   ncores: 1
+  PYDEVD_WARN_EVALUATION_TIMEOUT: 10
+  PYDEVD_UNBLOCK_THREADS_TIMEOUT: 10
