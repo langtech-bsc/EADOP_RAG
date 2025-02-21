@@ -27,7 +27,7 @@ class EvaluateRetrieval():
         logging.info(f"* [{self.class_name}] Configuring class")
         self.show_config()
         self.validate_config()
-        self.test_df, self.db = self.load_input_data()
+        self.test_df, self.db, self.tokenizer, self.reranker = self.load_input_data()
 
     def __call__(self):
 
@@ -238,7 +238,7 @@ class EvaluateRetrieval():
         if not reranking:
             return all_scores
 
-        tokenizer, reranker = self.load_reranker()
+        # tokenizer, reranker = self.load_reranker()
 
         total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(self.test_df))
 
@@ -254,19 +254,13 @@ class EvaluateRetrieval():
 
             # get scores
             scores = []
-            if True:
-                data_pairs = [[test_query, c[0].page_content] for c in contexts]
-                # scores = reranker.compute_score(data_pairs)
-                logging.debug(f"data_pairs: {data_pairs}")
-                inputs = tokenizer(data_pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
-                inputs.to(self.config["params"]["device"])
-                logging.debug(f"inputs: {inputs}")
-                scores = reranker(**inputs, return_dict=True).logits.view(-1, ).float()
-            else:
-                for c in contexts:
-                    data_pair = [test_query, c[0].page_content]
-                    inputs = tokenizer([data_pair], padding=True, truncation=True, return_tensors='pt', max_length=512)
-                    scores.append(reranker(**inputs, return_dict=True).logits.view(-1, ).float())
+            data_pairs = [[test_query, c[0].page_content] for c in contexts]
+            # scores = reranker.compute_score(data_pairs)
+            logging.debug(f"data_pairs: {data_pairs}")
+            inputs = self.tokenizer(data_pairs, padding=True, truncation=True, return_tensors='pt', max_length=512)
+            inputs.to(self.config["params"]["device"])
+            logging.debug(f"inputs: {inputs}")
+            scores = self.reranker(**inputs, return_dict=True).logits.view(-1, ).float()
 
             # save and iterate
             all_scores.append(scores.tolist())
@@ -396,6 +390,8 @@ class EvaluateRetrieval():
                                     embedding_model_dir = self.config["input"]["model_dir"],
                                     force_download = self.config["params"]["force_download"])
 
+        tokenizer, reranker = self.load_reranker()
+
         # reranker = None
         # tokenizer = None
         # if True in self.config["params"]["reranking"]:
@@ -405,7 +401,7 @@ class EvaluateRetrieval():
         #     reranker = AutoModelForSequenceClassification.from_pretrained('BAAI/bge-reranker-v2-m3', device_map=self.config["params"]["device"])
         #     reranker.eval()
 
-        return test_df, db #, tokenizer, reranker
+        return test_df, db, tokenizer, reranker
 
     def show_config(self):
 
