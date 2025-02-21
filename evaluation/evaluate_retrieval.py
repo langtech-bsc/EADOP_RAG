@@ -384,7 +384,8 @@ class EvaluateRetrieval():
 
         stats = {
             "tests" : total,
-            "retrieval" : round(correct_retrieval/total, 2)
+            "correct_retrieval": correct_retrieval,
+            "retrieval" : round(correct_retrieval/total, 4)
         }
         answers = {
             "answers" : results
