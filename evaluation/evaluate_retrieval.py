@@ -27,6 +27,7 @@ class EvaluateRetrieval():
         logging.info(f"* [{self.class_name}] Configuring class")
         self.show_config()
         self.validate_config()
+        self.test_df, self.db = self.load_input_data()
 
     def __call__(self):
 
@@ -38,15 +39,12 @@ class EvaluateRetrieval():
         #                                                      number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
         #                                                      n_cores = self.config["params"]["n_cores"])
 
-        test_df, db = self.load_input_data()         
-        all_contexts = self.prepare_all_contexts(test_df, 
-                                                 db, 
-                                                 number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
+        # test_df, db = self.load_input_data()
+        all_contexts = self.prepare_all_contexts(number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
                                                  n_cores = self.config["params"]["n_cores"])
 
-        del db
         # self.tokenizer, self.reranker = self.load_reranker()
-        all_scores = self.prepare_all_scores_single_thread(all_contexts, test_df,
+        all_scores = self.prepare_all_scores_single_thread(all_contexts, 
                                                            reranking = True in self.config["params"]["reranking"])
 
         res = []
@@ -59,12 +57,11 @@ class EvaluateRetrieval():
 
             for n_ch_after_reranking in number_of_chunks_after_reranking:
 
-                results = self.process(test_df, 
-                                    number_of_chunks = number_of_chunks, 
-                                    number_of_chunks_after_reranking = n_ch_after_reranking,
-                                    reranking = reranking,
-                                    all_scores = all_scores, 
-                                    all_contexts = all_contexts)
+                results = self.process(number_of_chunks = number_of_chunks, 
+                                       number_of_chunks_after_reranking = n_ch_after_reranking,
+                                       reranking = reranking,
+                                       all_scores = all_scores, 
+                                       all_contexts = all_contexts)
 
                 tests = results["stats"]["tests"]
                 retrieval = results["stats"]["retrieval"]
@@ -147,22 +144,22 @@ class EvaluateRetrieval():
 
         return self.config["params"]["base_url"] + formatted_title
 
-    def prepare_all_contexts(self, test_df, db, number_of_chunks, n_cores):
+    def prepare_all_contexts(self, number_of_chunks, n_cores):
 
         if False and n_cores > 1:
-            all_contexts = self.prepare_all_contexts_parallel(test_df, db, number_of_chunks, n_cores)
+            all_contexts = self.prepare_all_contexts_parallel(number_of_chunks, n_cores)
         else:
-            all_contexts = self.prepare_all_contexts_single_thread(test_df, db, number_of_chunks)
+            all_contexts = self.prepare_all_contexts_single_thread(number_of_chunks)
 
         return all_contexts
 
-    def prepare_all_contexts_single_thread(self, test_df, db, number_of_chunks: int):
+    def prepare_all_contexts_single_thread(self, number_of_chunks: int):
 
         logging.info(f"* [{self.class_name}] Preparing all contexts with number_of_chunks = {number_of_chunks}")
 
         # initialize score tracking
         all_contexts = []
-        total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
+        total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(self.test_df))
 
         # evaluation
         msg = "Preparing all contexts"
@@ -171,10 +168,10 @@ class EvaluateRetrieval():
         for i in tqdm(range(total), desc=msg):
 
             # query
-            test_query = test_df["answers"][i][0]["question"]
+            test_query = self.test_df["answers"][i][0]["question_ca"] # ["question"]
 
             # retrieve chunks
-            contexts = db.similarity_search_with_score(test_query, k=number_of_chunks)
+            contexts = self.db.similarity_search_with_score(test_query, k=number_of_chunks)
 
             # save and iterate
             all_contexts.append(contexts)
@@ -231,7 +228,7 @@ class EvaluateRetrieval():
 
     #     return all_contexts
 
-    def prepare_all_scores_single_thread(self, all_contexts, test_df, reranking):
+    def prepare_all_scores_single_thread(self, all_contexts, reranking):
 
         logging.info(f"* [{self.class_name}] Preparing all scores")
 
@@ -243,14 +240,14 @@ class EvaluateRetrieval():
 
         tokenizer, reranker = self.load_reranker()
 
-        total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
+        total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(self.test_df))
 
         # evaluation
         msg = "Preparing all scores"
         for i in tqdm(range(total), desc=msg):
 
             # query
-            test_query = test_df["answers"][i][0]["question"]
+            test_query = self.test_df["answers"][i][0]["question_ca"] # ["question"]
 
             # retrieve chunks
             contexts = all_contexts[i]
@@ -277,7 +274,6 @@ class EvaluateRetrieval():
         return all_scores
 
     def process(self, 
-                test_df, 
                 number_of_chunks: int, 
                 number_of_chunks_after_reranking: int, 
                 reranking: bool, 
@@ -288,7 +284,7 @@ class EvaluateRetrieval():
 
         # initialize score tracking
         results = []
-        total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(test_df))
+        total = self.set_max_evaluations(max_evaluations = self.config["params"]["max_evaluations"], n_eval = len(self.test_df))
         correct_retrieval = 0
 
         # evaluation
@@ -296,7 +292,7 @@ class EvaluateRetrieval():
             result = {}
 
             # query
-            test_query = test_df["answers"][i][0]["question"]
+            test_query = self.test_df["answers"][i][0]["question_ca"] # ["question"]
             result["question"] = test_query
 
             # retrieve chunks
@@ -312,7 +308,7 @@ class EvaluateRetrieval():
             wiki_urls = [self.get_wiki_url(c[0].metadata["title"]) for c in contexts]
             result["found_documents"] = wiki_urls
 
-            correct_wiki_url = urllib.parse.unquote(test_df["catalan"][i])
+            correct_wiki_url = urllib.parse.unquote(self.test_df["catalan"][i])
             result["correct_wiki_url"] = correct_wiki_url
             correct_found = str(correct_wiki_url) in wiki_urls
             result["retrieval"] = correct_found
