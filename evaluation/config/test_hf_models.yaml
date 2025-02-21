@@ -8,7 +8,7 @@ output:
   experiment_name: "test_hf_models_reranking"
 params:
   query_languages: ["ca", "en"]
-  number_of_chunks: [1, 2] #, 3, 4, 8, 10, 15]
+  number_of_chunks: [1, 2, 3, 4, 5, 8, 10, 12, 15]
   base_url: "https://ca.wikipedia.org/wiki/"
   verbose: False
   force_download: False
