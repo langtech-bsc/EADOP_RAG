@@ -56,8 +56,11 @@ class EvaluateRetrieval():
         df_result.to_csv(self.config["output"]["csv_file"], index = False)
 
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-            # print(df_result.sort_values(by=['retrieval']))
-            logging.info(f"* [{self.class_name}] Evaluation summary\n" + df.sort_values(by=['retrieval']).to_string(index=False))      
+            for lang in self.config["params"]["query_languages"]:
+                # print(df_result.sort_values(by=['retrieval']))
+                df_lang = df_result[df_result["language"]==lang].drop('output_json', axis=1)
+                df_lang = df_lang.drop('reranking', axis=1)
+                logging.info(f"* [{self.class_name}] Evaluation summary in {lang}\n" + df_lang.sort_values(by=['retrieval']).to_string(index=False))      
 
         logging.info(f"* [{self.class_name}] Evaluation completed")
         
@@ -92,6 +95,7 @@ class EvaluateRetrieval():
 
                 tests = results["stats"]["tests"]
                 retrieval = results["stats"]["retrieval"]
+                correct_retrieval = results["stats"]["correct_retrieval"]
                 json_file = self.config["output"]["json_file"]
 
                 res.append({"number_of_chunks": number_of_chunks, 
@@ -99,6 +103,7 @@ class EvaluateRetrieval():
                             "reranking": reranking,
                             "tests": tests, 
                             "retrieval": retrieval, 
+                            "correct_retrieval": correct_retrieval,
                             "language": language,
                             "output_json": json_file})
 
