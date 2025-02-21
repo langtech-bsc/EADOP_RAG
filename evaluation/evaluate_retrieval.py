@@ -43,7 +43,7 @@ class EvaluateRetrieval():
         #                                                      n_cores = self.config["params"]["n_cores"])
 
         df_langs = []
-        for lang in self.config["params"]["languages"]:
+        for lang in self.config["params"]["query_languages"]:
 
             logging.info(f"* [{self.class_name}] Evaluating retrieval for language: {lang}")
             res = self.evaluate_retrieval_by_lang(language = lang)
