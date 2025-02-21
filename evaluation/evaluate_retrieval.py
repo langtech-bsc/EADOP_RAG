@@ -12,9 +12,11 @@ from multiprocessing import Pool
 # reranker
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-# from FlagEmbedding import FlagReranker
 
 warnings.filterwarnings("ignore")
+
+class UnexpectedLanguage(Exception):
+    pass
 
 class EvaluateRetrieval():
 
@@ -22,6 +24,7 @@ class EvaluateRetrieval():
 
         self.class_name = __class__.__name__
         self.yaml_file = yaml_file
+        self.lang2field = {"ca": "question_ca", "en": "question"}
         self.config = self.prepare_config(yaml_file = yaml_file)
         utils.set_logger(verbose = self.config["params"]["verbose"])
         logging.info(f"* [{self.class_name}] Configuring class")
@@ -39,13 +42,36 @@ class EvaluateRetrieval():
         #                                                      number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
         #                                                      n_cores = self.config["params"]["n_cores"])
 
+        df_langs = []
+        for lang in self.config["params"]["languages"]:
+
+            logging.info(f"* [{self.class_name}] Evaluating retrieval for language: {lang}")
+            res = self.evaluate_retrieval_by_lang(language = lang)
+
+            df = pd.DataFrame(res) # , columns=["number_of_chunks", "number_of_chunks_after_reranking", "reranking", "tests", "retrieval", "language", "output_json"])
+            df_langs.append(df)
+
+        df_result = pd.concat(df_langs, axis=0, ignore_index=True)
+        logging.info(f"* [{self.class_name}] Saving results summary in {self.config['output']['csv_file']}")    
+        df_result.to_csv(self.config["output"]["csv_file"], index = False)
+
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            # print(df_result.sort_values(by=['retrieval']))
+            logging.info(f"* [{self.class_name}] Evaluation summary\n" + df.sort_values(by=['retrieval']).to_string(index=False))      
+
+        logging.info(f"* [{self.class_name}] Evaluation completed")
+        
+    def evaluate_retrieval_by_lang(self, language: str):
+
         # test_df, db = self.load_input_data()
         all_contexts = self.prepare_all_contexts(number_of_chunks = max(self.config["params"]["number_of_chunks"]), 
-                                                 n_cores = self.config["params"]["n_cores"])
+                                                 n_cores = self.config["params"]["n_cores"],
+                                                 language = language)
 
         # self.tokenizer, self.reranker = self.load_reranker()
         all_scores = self.prepare_all_scores_single_thread(all_contexts, 
-                                                           reranking = True in self.config["params"]["reranking"])
+                                                           reranking = True in self.config["params"]["reranking"],
+                                                           language = language)
 
         res = []
         combinations = [combination for combination in itertools.product(self.config["params"]["number_of_chunks"], self.config["params"]["reranking"])]
@@ -61,7 +87,8 @@ class EvaluateRetrieval():
                                        number_of_chunks_after_reranking = n_ch_after_reranking,
                                        reranking = reranking,
                                        all_scores = all_scores, 
-                                       all_contexts = all_contexts)
+                                       all_contexts = all_contexts,
+                                       language = language)
 
                 tests = results["stats"]["tests"]
                 retrieval = results["stats"]["retrieval"]
@@ -72,16 +99,11 @@ class EvaluateRetrieval():
                             "reranking": reranking,
                             "tests": tests, 
                             "retrieval": retrieval, 
+                            "language": language,
                             "output_json": json_file})
 
-        logging.info(f"* [{self.class_name}] Saving results summary in {self.config['output']['csv_file']}")    
-        df = pd.DataFrame(res, columns=["number_of_chunks", "number_of_chunks_after_reranking", "reranking", "tests", "retrieval", "output_json"])
-        df.to_csv(self.config["output"]["csv_file"], index = False)
-        
-        logging.info(f"* [{self.class_name}] Evaluation summary\n" + df.to_string(index=False))
+        return res
 
-        logging.info(f"* [{self.class_name}] Evaluation completed")
-        
     def load_reranker(self):
 
         reranker = None
@@ -144,16 +166,16 @@ class EvaluateRetrieval():
 
         return self.config["params"]["base_url"] + formatted_title
 
-    def prepare_all_contexts(self, number_of_chunks, n_cores):
+    def prepare_all_contexts(self, number_of_chunks, n_cores, language):
 
         if False and n_cores > 1:
             all_contexts = self.prepare_all_contexts_parallel(number_of_chunks, n_cores)
         else:
-            all_contexts = self.prepare_all_contexts_single_thread(number_of_chunks)
+            all_contexts = self.prepare_all_contexts_single_thread(number_of_chunks, language)
 
         return all_contexts
 
-    def prepare_all_contexts_single_thread(self, number_of_chunks: int):
+    def prepare_all_contexts_single_thread(self, number_of_chunks: int, language: str):
 
         logging.info(f"* [{self.class_name}] Preparing all contexts with number_of_chunks = {number_of_chunks}")
 
@@ -168,7 +190,7 @@ class EvaluateRetrieval():
         for i in tqdm(range(total), desc=msg):
 
             # query
-            test_query = self.test_df["answers"][i][0]["question_ca"] # ["question"]
+            test_query = self.test_df["answers"][i][0][self.lang2field[language]] # ["question"]
 
             # retrieve chunks
             contexts = self.db.similarity_search_with_score(test_query, k=number_of_chunks)
@@ -228,7 +250,7 @@ class EvaluateRetrieval():
 
     #     return all_contexts
 
-    def prepare_all_scores_single_thread(self, all_contexts, reranking):
+    def prepare_all_scores_single_thread(self, all_contexts, reranking, language: str):
 
         logging.info(f"* [{self.class_name}] Preparing all scores")
 
@@ -247,7 +269,7 @@ class EvaluateRetrieval():
         for i in tqdm(range(total), desc=msg):
 
             # query
-            test_query = self.test_df["answers"][i][0]["question_ca"] # ["question"]
+            test_query = self.test_df["answers"][i][0][self.lang2field[language]] # ["question"]
 
             # retrieve chunks
             contexts = all_contexts[i]
@@ -272,7 +294,8 @@ class EvaluateRetrieval():
                 number_of_chunks_after_reranking: int, 
                 reranking: bool, 
                 all_scores: list = [], 
-                all_contexts: list = []):
+                all_contexts: list = [],
+                language: str = "ca"):
 
         logging.info(f"* [{self.class_name}] Starting evaluation with number_of_chunks = {number_of_chunks}")
 
@@ -286,7 +309,7 @@ class EvaluateRetrieval():
             result = {}
 
             # query
-            test_query = self.test_df["answers"][i][0]["question_ca"] # ["question"]
+            test_query = self.test_df["answers"][i][0][self.lang2field[language]] # ["question"]
             result["question"] = test_query
 
             # retrieve chunks
@@ -420,6 +443,9 @@ class EvaluateRetrieval():
         utils.check_folders_exist(folder_list = folders_to_check, create = False)
         utils.check_folders_exist([self.config["output"]["experiment"]], create = True)
         utils.copy_file_to_folder(filename = self.yaml_file, folder = self.config["output"]["experiment"])
+        for lang in self.config["params"]["query_languages"]:
+            if lang not in self.lang2field.keys():
+                raise UnexpectedLanguage(f"Unexpected Language code [{lang}]. Expected languages are {self.lang2field.keys()}")
 
 def similarity_search_with_score_wrapper(args):
 
