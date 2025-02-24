@@ -1,0 +1,20 @@
+input:
+  testset_file: "../data/ca_wikiqa_testplusvalidation_ca_questions.json"
+  vectorstore_model: "langtech-dev/complete_wiki_vs"
+  embeddings_model: "BAAI/bge-m3"
+  reranking_model: "BAAI/bge-reranker-v2-m3"
+output:
+  dir: "./test_results_evaluate_retrieval"
+  experiment_name: "test_hf_models_reranking"
+params:
+  query_languages: ["ca", "en"]
+  number_of_chunks: [1, 2, 3, 4, 5, 8, 10, 12, 15]
+  base_url: "https://ca.wikipedia.org/wiki/"
+  verbose: False
+  force_download: False
+  max_evaluations: -1
+  reranking: [True]
+  n_cores: 1
+  PYDEVD_WARN_EVALUATION_TIMEOUT: 10
+  PYDEVD_UNBLOCK_THREADS_TIMEOUT: 10
+  TOKENIZERS_PARALLELISM: False
