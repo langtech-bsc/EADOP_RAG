@@ -1,0 +1,5 @@
+TESTSET_DIRECTORY = "ca_wikiqa_test_processedv2.json"
+VS_DIRECTORY = "/gpfs/projects/bsc88/apps/marina/rag/complete_wiki/vs/normal/index-BAAI_bge-m3-2000-200-SentenceTransformersTokenTextSplitter"
+EMBEDDINGS_MODEL = "BAAI/bge-m3"
+NUMBER_OF_CHUNKS = 1
+GPFS_MODELS_REGISTRY_PATH = "/gpfs/projects/bsc88/hf-models/"
